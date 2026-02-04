@@ -3,13 +3,26 @@ export const state = {
     currentTab: 'new-sale',
     salesMode: 'default', // default | add-customer
     salesHistoryId: 'ORD-99281',
+    // History filters
+    historyViewMode: 'completed', // 'completed' | 'drafts'
+    historyDateFilter: 'today', // 'all' | 'today' | 'week' | 'month' | 'custom'
+    historyFromDate: '',
+    historyToDate: '',
     showMobileReceipt: false,
     reportsTab: 'sales',
     repairTab: 'active',
     repairViewMode: 'search',
     selectedRepairDevice: null,
-    selectedClient: 'Arjun Malhotra',
-    clientViewMode: 'profile',
+    selectedClient: null,
+    selectedClientId: null,
+    clientViewMode: 'directory', // directory | profile | add | groups | invoice
+    clientSearchQuery: '',
+    // Client invoice preview
+    clientInvoiceId: null, // Sale ID to preview from client timeline
+    // Groups
+    selectedGroupId: null,
+    groupViewMode: 'list', // list | create | detail | add-members
+    groupSearchQuery: '',
     promoterViewMode: 'performance',
     inventoryTab: 'brands', // brands | categories
     inventoryMode: 'details', // details | inward
@@ -57,6 +70,10 @@ export function setTab(tab) {
 
 export function setSalesHistoryId(id) {
     state.salesHistoryId = id;
+    // Auto-open receipt preview on mobile when selecting a transaction
+    if (id && window.innerWidth < 768) {
+        state.showMobileReceipt = true;
+    }
     triggerRender();
 }
 
@@ -86,9 +103,18 @@ export function setGridCols(n) {
     triggerRender();
 }
 
-export function setClientMode(mode, name = null) {
+export function setClientMode(mode, name = null, id = null) {
     state.clientViewMode = mode;
     if (name) state.selectedClient = name;
+    if (id) state.selectedClientId = id;
+    // Clear invoice when going back to profile
+    if (mode !== 'invoice') state.clientInvoiceId = null;
+    triggerRender();
+}
+
+export function viewClientInvoice(saleId) {
+    state.clientInvoiceId = saleId;
+    state.clientViewMode = 'invoice';
     triggerRender();
 }
 
@@ -124,7 +150,9 @@ export function setMarketplaceViewMode(mode) {
 
 export function setLoginStatus(status) {
     state.isLoggedIn = status;
-    state.currentApp = status ? 'sales' : 'launcher';
+    // Mobile users go to launcher first, desktop users go to sales
+    const isMobile = window.innerWidth < 768;
+    state.currentApp = status ? (isMobile ? 'launcher' : 'sales') : 'launcher';
     triggerRender();
 }
 
@@ -183,9 +211,36 @@ export function setSalesMode(mode) {
 }
 
 window.setSalesMode = setSalesMode;
+
+export function setHistoryViewMode(mode) {
+    state.historyViewMode = mode;
+    triggerRender();
+}
+
+export function setHistoryDateFilter(filter) {
+    state.historyDateFilter = filter;
+    if (filter !== 'custom') {
+        state.historyFromDate = '';
+        state.historyToDate = '';
+    }
+    triggerRender();
+}
+
+export function setHistoryCustomDates(from, to) {
+    state.historyFromDate = from;
+    state.historyToDate = to;
+    state.historyDateFilter = 'custom';
+    triggerRender();
+}
+
+window.setHistoryViewMode = setHistoryViewMode;
+window.setHistoryDateFilter = setHistoryDateFilter;
+window.setHistoryCustomDates = setHistoryCustomDates;
+
 window.setRepairMode = setRepairMode;
 window.setGridCols = setGridCols;
 window.setClientMode = setClientMode;
+window.viewClientInvoice = viewClientInvoice;
 window.setSchemesTab = setSchemesTab;
 window.setSchemeBrand = setSchemeBrand;
 window.setScheme = setScheme;
@@ -201,3 +256,17 @@ window.setPreBookingViewMode = setPreBookingViewMode;
 window.setActiveCampaign = setActiveCampaign;
 window.setAutomationViewMode = setAutomationViewMode;
 window.setActiveAutomation = setActiveAutomation;
+
+// Groups functions
+export function setGroupViewMode(mode) {
+    state.groupViewMode = mode;
+    triggerRender();
+}
+
+export function setSelectedGroup(id) {
+    state.selectedGroupId = id;
+    triggerRender();
+}
+
+window.setGroupViewMode = setGroupViewMode;
+window.setSelectedGroup = setSelectedGroup;

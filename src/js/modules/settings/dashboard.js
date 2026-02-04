@@ -18,7 +18,7 @@ export function renderSettingsDashboard(mode) {
         { n: 'Lang', i: 'language' },
         { n: 'Backup', i: 'cloud_upload' },
         { n: 'Bills', i: 'description' },
-        { n: 'Scan', i: 'qr_code_scanner' },
+        { n: 'AI Config', i: 'smart_toy', k: 'ai' },
         { n: 'Updates', i: 'update' },
         { n: 'API', i: 'key' },
         { n: 'Theme', i: 'palette' },

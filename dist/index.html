@@ -137,9 +137,74 @@
                 background-color: #e2e8f0;
                 border-radius: 20px;
             }
+
+            /* Print styles */
+            @media print {
+                body {
+                    background: white !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+                
+                .screen-container {
+                    height: auto !important;
+                    overflow: visible !important;
+                }
+                
+                /* Hide everything except receipt */
+                #app > * {
+                    display: none !important;
+                }
+                
+                #receipt-content {
+                    display: block !important;
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 80mm !important;
+                    max-width: 80mm !important;
+                    padding: 5mm !important;
+                    margin: 0 !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    height: auto !important;
+                    overflow: visible !important;
+                    font-size: 10px !important;
+                }
+                
+                #receipt-content * {
+                    font-size: inherit !important;
+                }
+                
+                #receipt-content h2 {
+                    font-size: 14px !important;
+                }
+                
+                #receipt-content h4 {
+                    font-size: 11px !important;
+                }
+                
+                .no-print {
+                    display: none !important;
+                }
+                
+                /* Ensure colors print */
+                .bg-green-50, .bg-blue-50, .bg-purple-50, .bg-orange-50, .bg-slate-50 {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+            }
+
+            /* Safe area for mobile devices */
+            .mb-safe {
+                margin-bottom: env(safe-area-inset-bottom, 0);
+            }
+            .pb-safe {
+                padding-bottom: env(safe-area-inset-bottom, 0);
+            }
         }
     </style>
-  <script type="module" crossorigin src="/assets/index-CfzzjEiT.js"></script>
+  <script type="module" crossorigin src="/assets/index-BA_EclhQ.js"></script>
 </head>
 
 <body>

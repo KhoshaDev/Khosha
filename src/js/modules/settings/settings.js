@@ -3,6 +3,7 @@ import { renderSettingsDashboard } from './dashboard.js';
 import { renderSettingsRoles } from './roles.js';
 import { renderSettingsAccounting } from './accounting.js';
 import { renderSettingsLedger } from './ledger.js';
+import { renderAISettings } from './ai.js';
 
 export function renderSettings(mode) {
     const isDesktopSecondary = mode === 'desktop-secondary';
@@ -31,15 +32,15 @@ export function renderSettings(mode) {
         if (input && input.value) {
             state.settingsActiveRole = input.value;
             state.settingsSubView = 'detail';
-            alert(`Role "${input.value}" created successfully!`);
+            window.toast.success(`Role "${input.value}" created successfully!`);
             triggerRender();
         } else {
-            alert('Please enter a role name');
+            window.toast.warning('Please enter a role name');
         }
     };
 
     window.updateRole = () => {
-        alert('Role profile updated successfully!');
+        window.toast.success('Role profile updated successfully!');
         window.setSettingsSubView('detail');
     };
 
@@ -52,6 +53,9 @@ export function renderSettings(mode) {
         }
         if (state.settingsView === 'ledger') {
             return renderSettingsLedger();
+        }
+        if (state.settingsView === 'ai') {
+            return renderAISettings();
         }
         return '';
     }

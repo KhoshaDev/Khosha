@@ -18,6 +18,11 @@ import { renderPreBooking } from './modules/prebooking/index.js';
 import { renderAutomation } from './modules/automation/index.js';
 import { initRouter, syncStateToUrl } from './router.js';
 import { syncData } from './utils/sync.js';
+// Initialize WATI WhatsApp integration
+import './utils/wati.js';
+
+// Initialize toast notification system
+import './utils/toast.js';
 
 // --- Router / Layout Logic ---
 
@@ -110,7 +115,7 @@ function renderTablet() {
             : renderAppPrimary()}
                
                <!-- Tablet Specific: Sticky Preview Button if Active -->
-               ${(state.currentApp === 'sales' && (state.currentTab === 'new-sale' || (state.currentTab === 'history' && state.salesHistoryId))) ? `
+               ${(state.currentApp === 'sales' && ((state.currentTab === 'new-sale' && window.getActiveCart && window.getActiveCart().length > 0) || (state.currentTab === 'history' && state.salesHistoryId))) ? `
                     <div class="absolute bottom-6 right-6 z-50">
                         <button onclick="toggleMobileReceipt(true)" class="w-14 h-14 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform">
                             <span class="material-icons-outlined">receipt_long</span>
@@ -141,7 +146,9 @@ function renderMobile() {
 
     // SALES APP MOBILE LOGIC
     if (state.currentApp === 'sales') {
-        const showPreview = state.currentTab === 'new-sale' || (state.currentTab === 'history' && state.salesHistoryId);
+        // Only show preview button when there's something to preview
+        const hasCartItems = window.getActiveCart && window.getActiveCart().length > 0;
+        const showPreview = (state.currentTab === 'new-sale' && hasCartItems) || (state.currentTab === 'history' && state.salesHistoryId);
 
         // 3. PREVIEW SCREEN (Full Screen replacement)
         if (state.showMobileReceipt && showPreview) {
@@ -153,13 +160,8 @@ function renderMobile() {
                              <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Receipt Preview</h3>
                         </div>
                     </div>
-                    <div class="overflow-y-auto flex-1 p-4 bg-slate-50/50">
+                    <div class="overflow-y-auto flex-1 p-4 pb-20 bg-slate-50/50">
                         ${renderReceiptPreview()}
-                    </div>
-                    <div class="p-4 border-t border-slate-100 bg-white shrink-0">
-                        <button class="w-full py-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase shadow-lg flex items-center justify-center gap-2">
-                            <span class="material-icons-outlined text-sm">print</span> Print Receipt
-                        </button>
                     </div>
                 </div>
             `;
@@ -264,7 +266,6 @@ registerRender(syncStateToUrl);
 
 // Initial Setup
 initRouter();
-syncData(); // Get live data from Turso
 
 // Register resize handler
 window.addEventListener('resize', () => {
@@ -275,4 +276,11 @@ window.addEventListener('resize', () => {
     }
 });
 
-render();
+// Load data first, then render
+syncData().then(() => {
+    console.log('Initial data sync complete');
+    render();
+}).catch(err => {
+    console.error('Initial sync failed:', err);
+    render(); // Render anyway so app isn't stuck on loading
+});
