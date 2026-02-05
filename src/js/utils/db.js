@@ -66,7 +66,12 @@ export const db = {
                 [c.id, c.name, c.phone || '', c.email || '', new Date().toISOString(), c.dob || null, c.location || '', rid]
             );
         },
-        getById: (id) => query("SELECT * FROM customers WHERE id = ?", [id])
+        getById: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM customers WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("SELECT * FROM customers WHERE id = ?", [id]);
+        }
     },
     companies: {
         getAll: () => {
@@ -82,8 +87,18 @@ export const db = {
                 [c.id, c.name, c.gst_number, c.customer_id, new Date().toISOString(), rid]
             );
         },
-        getByCustomerId: (customerId) => query("SELECT * FROM companies WHERE customer_id = ?", [customerId]),
-        getById: (id) => query("SELECT * FROM companies WHERE id = ?", [id])
+        getByCustomerId: (customerId) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM companies WHERE customer_id = ? AND retailer_id = ?", [customerId, rid])
+                : query("SELECT * FROM companies WHERE customer_id = ?", [customerId]);
+        },
+        getById: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM companies WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("SELECT * FROM companies WHERE id = ?", [id]);
+        }
     },
     sales: {
         getAll: () => {
@@ -92,7 +107,12 @@ export const db = {
                 ? query("SELECT * FROM sales WHERE retailer_id = ? ORDER BY date DESC", [rid])
                 : query("SELECT * FROM sales ORDER BY date DESC");
         },
-        getById: (id) => query("SELECT * FROM sales WHERE id = ?", [id]),
+        getById: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM sales WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("SELECT * FROM sales WHERE id = ?", [id]);
+        },
         getDrafts: () => {
             const rid = getCurrentRetailerId();
             return rid
@@ -109,15 +129,24 @@ export const db = {
                  s.installation_required || 0, s.installation_date || null, rid]
             );
         },
-        update: (s) => query(
-            `UPDATE sales SET customer_id = ?, customer_name = ?, total_amount = ?, status = ?,
-             payment_mode = ?, payment_reference = ?, gst_required = ?, company_id = ?,
-             installation_required = ?, installation_date = ? WHERE id = ?`,
-            [s.customer_id, s.customer_name, s.total_amount, s.status,
-             s.payment_mode || null, s.payment_reference || null, s.gst_required || 0, s.company_id || null,
-             s.installation_required || 0, s.installation_date || null, s.id]
-        ),
-        delete: (id) => query("DELETE FROM sales WHERE id = ?", [id]),
+        update: (s) => {
+            const rid = getCurrentRetailerId();
+            const where = rid ? 'WHERE id = ? AND retailer_id = ?' : 'WHERE id = ?';
+            const params = [s.customer_id, s.customer_name, s.total_amount, s.status,
+                s.payment_mode || null, s.payment_reference || null, s.gst_required || 0, s.company_id || null,
+                s.installation_required || 0, s.installation_date || null, s.id];
+            if (rid) params.push(rid);
+            return query(
+                `UPDATE sales SET customer_id = ?, customer_name = ?, total_amount = ?, status = ?,
+                 payment_mode = ?, payment_reference = ?, gst_required = ?, company_id = ?,
+                 installation_required = ?, installation_date = ? ${where}`, params);
+        },
+        delete: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("DELETE FROM sales WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("DELETE FROM sales WHERE id = ?", [id]);
+        },
         addItem: (i) => query(
             `INSERT INTO sale_items (id, sale_id, product_id, product_name, category, quantity, price, discount_type, discount_value, discount_amount, scheme_id, final_price, imei, serial_number, mac_id, manufacturing_date, installation_date, extra_fields)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -161,10 +190,25 @@ export const db = {
                 [g.id, g.name, g.description || null, g.is_company || 0, g.gst_number || null, g.contact_person || null, g.created_at, rid]
             );
         },
-        getById: (id) => query("SELECT * FROM groups WHERE id = ?", [id]),
-        delete: (id) => query("DELETE FROM groups WHERE id = ?", [id]),
+        getById: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM groups WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("SELECT * FROM groups WHERE id = ?", [id]);
+        },
+        delete: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("DELETE FROM groups WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("DELETE FROM groups WHERE id = ?", [id]);
+        },
         // Group members
-        getMembers: (groupId) => query("SELECT * FROM group_members WHERE group_id = ?", [groupId]),
+        getMembers: (groupId) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM group_members WHERE group_id = ? AND retailer_id = ?", [groupId, rid])
+                : query("SELECT * FROM group_members WHERE group_id = ?", [groupId]);
+        },
         getAllMembers: () => {
             const rid = getCurrentRetailerId();
             return rid
@@ -178,11 +222,18 @@ export const db = {
                 [m.id, m.group_id, m.customer_id, m.added_at, rid]
             );
         },
-        removeMember: (groupId, customerId) => query(
-            "DELETE FROM group_members WHERE group_id = ? AND customer_id = ?",
-            [groupId, customerId]
-        ),
-        deleteMembers: (groupId) => query("DELETE FROM group_members WHERE group_id = ?", [groupId])
+        removeMember: (groupId, customerId) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("DELETE FROM group_members WHERE group_id = ? AND customer_id = ? AND retailer_id = ?", [groupId, customerId, rid])
+                : query("DELETE FROM group_members WHERE group_id = ? AND customer_id = ?", [groupId, customerId]);
+        },
+        deleteMembers: (groupId) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("DELETE FROM group_members WHERE group_id = ? AND retailer_id = ?", [groupId, rid])
+                : query("DELETE FROM group_members WHERE group_id = ?", [groupId]);
+        }
     },
     automations: {
         getAll: () => {
@@ -191,9 +242,24 @@ export const db = {
                 ? query("SELECT * FROM automations WHERE retailer_id = ? ORDER BY created_at DESC", [rid])
                 : query("SELECT * FROM automations ORDER BY created_at DESC");
         },
-        getById: (id) => query("SELECT * FROM automations WHERE id = ?", [id]),
-        getByCustomer: (customerId) => query("SELECT * FROM automations WHERE customer_id = ? ORDER BY created_at DESC", [customerId]),
-        getBySale: (saleId) => query("SELECT * FROM automations WHERE sale_id = ?", [saleId]),
+        getById: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM automations WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("SELECT * FROM automations WHERE id = ?", [id]);
+        },
+        getByCustomer: (customerId) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM automations WHERE customer_id = ? AND retailer_id = ? ORDER BY created_at DESC", [customerId, rid])
+                : query("SELECT * FROM automations WHERE customer_id = ? ORDER BY created_at DESC", [customerId]);
+        },
+        getBySale: (saleId) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM automations WHERE sale_id = ? AND retailer_id = ?", [saleId, rid])
+                : query("SELECT * FROM automations WHERE sale_id = ?", [saleId]);
+        },
         add: (a) => {
             const rid = getCurrentRetailerId();
             return query(
@@ -202,13 +268,25 @@ export const db = {
                 [a.id, a.name, a.customer_id, a.customer_name, a.sale_id || null, a.status || 'active', a.created_at || new Date().toISOString(), rid]
             );
         },
-        update: (id, updates) => query(
-            `UPDATE automations SET status = ?, completed_at = ? WHERE id = ?`,
-            [updates.status, updates.completed_at || null, id]
-        ),
-        delete: (id) => query("DELETE FROM automations WHERE id = ?", [id]),
+        update: (id, updates) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query(`UPDATE automations SET status = ?, completed_at = ? WHERE id = ? AND retailer_id = ?`, [updates.status, updates.completed_at || null, id, rid])
+                : query(`UPDATE automations SET status = ?, completed_at = ? WHERE id = ?`, [updates.status, updates.completed_at || null, id]);
+        },
+        delete: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("DELETE FROM automations WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("DELETE FROM automations WHERE id = ?", [id]);
+        },
         // Automation messages
-        getMessages: (automationId) => query("SELECT * FROM automation_messages WHERE automation_id = ? ORDER BY day_offset", [automationId]),
+        getMessages: (automationId) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM automation_messages WHERE automation_id = ? AND retailer_id = ? ORDER BY day_offset", [automationId, rid])
+                : query("SELECT * FROM automation_messages WHERE automation_id = ? ORDER BY day_offset", [automationId]);
+        },
         getAllMessages: () => {
             const rid = getCurrentRetailerId();
             return rid
@@ -223,11 +301,18 @@ export const db = {
                 [m.id, m.automation_id, m.message_type, m.title, m.content, m.day_offset, m.scheduled_date, m.status || 'pending', rid]
             );
         },
-        updateMessageStatus: (id, status, sentAt) => query(
-            `UPDATE automation_messages SET status = ?, sent_at = ? WHERE id = ?`,
-            [status, sentAt, id]
-        ),
-        deleteMessages: (automationId) => query("DELETE FROM automation_messages WHERE automation_id = ?", [automationId])
+        updateMessageStatus: (id, status, sentAt) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query(`UPDATE automation_messages SET status = ?, sent_at = ? WHERE id = ? AND retailer_id = ?`, [status, sentAt, id, rid])
+                : query(`UPDATE automation_messages SET status = ?, sent_at = ? WHERE id = ?`, [status, sentAt, id]);
+        },
+        deleteMessages: (automationId) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("DELETE FROM automation_messages WHERE automation_id = ? AND retailer_id = ?", [automationId, rid])
+                : query("DELETE FROM automation_messages WHERE automation_id = ?", [automationId]);
+        }
     },
     communications: {
         getAll: () => {
@@ -236,7 +321,12 @@ export const db = {
                 ? query("SELECT * FROM communication_log WHERE retailer_id = ? ORDER BY sent_at DESC", [rid])
                 : query("SELECT * FROM communication_log ORDER BY sent_at DESC");
         },
-        getByCustomer: (customerId) => query("SELECT * FROM communication_log WHERE customer_id = ? ORDER BY sent_at DESC", [customerId]),
+        getByCustomer: (customerId) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM communication_log WHERE customer_id = ? AND retailer_id = ? ORDER BY sent_at DESC", [customerId, rid])
+                : query("SELECT * FROM communication_log WHERE customer_id = ? ORDER BY sent_at DESC", [customerId]);
+        },
         add: (c) => {
             const rid = getCurrentRetailerId();
             return query(
@@ -246,7 +336,81 @@ export const db = {
                  c.automation_id || null, c.sale_id || null, c.status || 'sent', rid]
             );
         },
-        updateStatus: (id, status) => query("UPDATE communication_log SET status = ? WHERE id = ?", [status, id])
+        updateStatus: (id, status) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("UPDATE communication_log SET status = ? WHERE id = ? AND retailer_id = ?", [status, id, rid])
+                : query("UPDATE communication_log SET status = ? WHERE id = ?", [status, id]);
+        }
+    },
+    inquiries: {
+        getAll: () => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM inquiries WHERE retailer_id = ? ORDER BY created_at DESC", [rid])
+                : query("SELECT * FROM inquiries ORDER BY created_at DESC");
+        },
+        getById: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM inquiries WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("SELECT * FROM inquiries WHERE id = ?", [id]);
+        },
+        add: (inq) => {
+            const rid = getCurrentRetailerId();
+            return query(
+                "INSERT INTO inquiries (id, customer_name, product_name, request, status, created_at, retailer_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [inq.id, inq.customer_name, inq.product_name, inq.request, inq.status || 'PENDING', inq.created_at || new Date().toISOString(), rid]
+            );
+        },
+        updateStatus: (id, status) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("UPDATE inquiries SET status = ? WHERE id = ? AND retailer_id = ?", [status, id, rid])
+                : query("UPDATE inquiries SET status = ? WHERE id = ?", [status, id]);
+        }
+    },
+    repairs: {
+        getAll: () => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM repairs WHERE retailer_id = ? ORDER BY created_at DESC", [rid])
+                : query("SELECT * FROM repairs ORDER BY created_at DESC");
+        },
+        getById: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM repairs WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("SELECT * FROM repairs WHERE id = ?", [id]);
+        },
+        add: (r) => {
+            const rid = getCurrentRetailerId();
+            return query(
+                "INSERT INTO repairs (id, customer_name, phone, device, issue, status, job_sheet_no, estimated_cost, assigned_to, created_at, retailer_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [r.id, r.customer_name, r.phone, r.device, r.issue, r.status || 'COLLECTED', r.job_sheet_no, r.estimated_cost || '0', r.assigned_to || 'Unassigned', r.created_at || new Date().toISOString(), rid]
+            );
+        },
+        updateStatus: (id, status) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("UPDATE repairs SET status = ? WHERE id = ? AND retailer_id = ?", [status, id, rid])
+                : query("UPDATE repairs SET status = ? WHERE id = ?", [status, id]);
+        }
+    },
+    inventoryLogs: {
+        getAll: () => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM inventory_logs WHERE retailer_id = ? ORDER BY date DESC", [rid])
+                : query("SELECT * FROM inventory_logs ORDER BY date DESC");
+        },
+        add: (log) => {
+            const rid = getCurrentRetailerId();
+            return query(
+                "INSERT INTO inventory_logs (id, product_id, type, quantity, reason, date, retailer_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [log.id, log.product_id, log.type, log.quantity, log.reason, log.date || new Date().toISOString(), rid]
+            );
+        }
     },
     approved: {
         // Check if mobile number is approved

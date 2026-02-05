@@ -6,7 +6,7 @@ export async function updateInquiryStatus(newStatus) {
     if (!state.activeInquiry?.id) return;
 
     try {
-        await db.query("UPDATE inquiries SET status = ? WHERE id = ?", [newStatus, state.activeInquiry.id]);
+        await db.inquiries.updateStatus(state.activeInquiry.id, newStatus);
         await syncData();
         window.setInquiryViewMode('list');
     } catch (err) {

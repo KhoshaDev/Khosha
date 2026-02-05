@@ -31,18 +31,15 @@ export async function confirmInward() {
             `, [id, model, 'Smartphone', model.split(' ')[0], 50000, 1, imei]);
         }
 
-        // 2. Add Inventory Log
-        await db.query(`
-            INSERT INTO inventory_logs (id, product_id, type, quantity, reason, date)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `, [
-            'LOG-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
-            model,
-            'INWARD',
-            1,
-            'New Shipment Arrival',
-            new Date().toISOString()
-        ]);
+        // 2. Add Inventory Log (tenant-scoped)
+        await db.inventoryLogs.add({
+            id: 'LOG-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
+            product_id: model,
+            type: 'INWARD',
+            quantity: 1,
+            reason: 'New Shipment Arrival',
+            date: new Date().toISOString()
+        });
 
         await syncData();
         window.setInventoryMode('details');

@@ -219,6 +219,52 @@ async function main() {
         `);
         await client.execute(`CREATE INDEX IF NOT EXISTS idx_communication_log_retailer ON communication_log(retailer_id)`);
 
+        // Inquiries (Customer product inquiries)
+        await client.execute(`
+            CREATE TABLE inquiries (
+                id TEXT PRIMARY KEY,
+                customer_name TEXT,
+                product_name TEXT,
+                request TEXT,
+                status TEXT DEFAULT 'PENDING',
+                created_at TEXT,
+                retailer_id TEXT
+            )
+        `);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_inquiries_retailer ON inquiries(retailer_id)`);
+
+        // Repairs (Service/repair job sheets)
+        await client.execute(`
+            CREATE TABLE repairs (
+                id TEXT PRIMARY KEY,
+                customer_name TEXT,
+                phone TEXT,
+                device TEXT,
+                issue TEXT,
+                status TEXT DEFAULT 'COLLECTED',
+                job_sheet_no TEXT,
+                estimated_cost TEXT,
+                assigned_to TEXT,
+                created_at TEXT,
+                retailer_id TEXT
+            )
+        `);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_repairs_retailer ON repairs(retailer_id)`);
+
+        // Inventory Logs (Stock inward/outward tracking)
+        await client.execute(`
+            CREATE TABLE inventory_logs (
+                id TEXT PRIMARY KEY,
+                product_id TEXT,
+                type TEXT,
+                quantity INTEGER,
+                reason TEXT,
+                date TEXT,
+                retailer_id TEXT
+            )
+        `);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_inventory_logs_retailer ON inventory_logs(retailer_id)`);
+
         // Retailers (Onboarded retailers from external approved database)
         await client.execute(`
             CREATE TABLE retailers (

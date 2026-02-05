@@ -6,7 +6,7 @@ export async function updateRepairStatus(newStatus) {
     if (!state.activeRepairId) return;
 
     try {
-        await db.query("UPDATE repairs SET status = ? WHERE id = ?", [newStatus, state.activeRepairId]);
+        await db.repairs.updateStatus(state.activeRepairId, newStatus);
         await syncData();
     } catch (err) {
         alert("Update failed: " + err.message);

@@ -22,7 +22,7 @@ export async function syncData() {
 
         // Fetch All Application Data in Parallel
         // Every query has .catch() so one failure doesn't break the entire sync
-        const [customers, products, sales, saleItems, companies, groups, groupMembers, automations, automationMessages, communications, schemes, retailers] = await Promise.all([
+        const [customers, products, sales, saleItems, companies, groups, groupMembers, automations, automationMessages, communications, schemes, retailers, inquiries, repairs, inventoryLogs] = await Promise.all([
             // TENANT-SCOPED tables
             tenantQuery("customers").catch(e => { console.error("Sync customers failed:", e); return []; }),
             // GLOBAL tables (no tenant filter)
@@ -41,7 +41,11 @@ export async function syncData() {
             tenantQuery("communication_log", "sent_at DESC").catch(e => { console.error("Sync communications failed:", e); return []; }),
             // GLOBAL tables
             query("SELECT * FROM schemes WHERE status = 'active' ORDER BY brand, name").catch(e => { console.error("Sync schemes failed:", e); return []; }),
-            query("SELECT * FROM retailers ORDER BY onboarded_at DESC").catch(e => { console.error("Sync retailers failed:", e); return []; })
+            query("SELECT * FROM retailers ORDER BY onboarded_at DESC").catch(e => { console.error("Sync retailers failed:", e); return []; }),
+            // TENANT-SCOPED: inquiries, repairs, inventory_logs
+            tenantQuery("inquiries", "created_at DESC").catch(e => { console.error("Sync inquiries failed:", e); return []; }),
+            tenantQuery("repairs", "created_at DESC").catch(e => { console.error("Sync repairs failed:", e); return []; }),
+            tenantQuery("inventory_logs", "date DESC").catch(e => { console.error("Sync inventory_logs failed:", e); return []; })
         ]);
 
         // Map to global window storage
@@ -58,10 +62,10 @@ export async function syncData() {
             communications: communications || [],
             schemes: schemes || [],
             retailers: retailers || [],
-            // Empty placeholders for other apps to prevent UI crashes
-            inventoryLogs: [],
-            inquiries: [],
-            repairs: [],
+            // Tenant-scoped tables
+            inquiries: inquiries || [],
+            repairs: repairs || [],
+            inventoryLogs: inventoryLogs || [],
             marketplace: [],
             campaigns: [],
             bookings: []
