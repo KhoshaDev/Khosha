@@ -203,7 +203,86 @@ async function main() {
             )
         `);
 
-        console.log("✅ Tables created: customers, products, companies, sales, sale_items, groups, group_members, automations, automation_messages, communication_log");
+        // Retailers (Onboarded retailers from external approved database)
+        await client.execute(`
+            CREATE TABLE retailers (
+                -- Primary key
+                id TEXT PRIMARY KEY,
+
+                -- Generated unique code (replaces external codes)
+                retailer_code TEXT UNIQUE NOT NULL,
+
+                -- Business information
+                retailer_name TEXT,
+                contact_person TEXT,
+                email TEXT,
+                mobile_number TEXT UNIQUE NOT NULL,
+                phone_number TEXT,
+
+                -- Address
+                address_line_1 TEXT,
+                address_line_2 TEXT,
+                country_name TEXT,
+                state_name TEXT,
+                city_name TEXT,
+                district_name TEXT,
+                area_name TEXT,
+                pin_code TEXT,
+
+                -- Financial
+                vat_number TEXT,
+                pan_number TEXT,
+
+                -- Bank details
+                bank_name TEXT,
+                bank_account_holder TEXT,
+                bank_account_number TEXT,
+                bank_branch TEXT,
+                bank_ifsc TEXT,
+
+                -- Hierarchy
+                parent_retailer_name TEXT,
+                nd_name TEXT,
+                rds_name TEXT,
+                salesman_name TEXT,
+                reporting_to_name TEXT,
+
+                -- Metrics
+                csa_on_counter TEXT,
+                counter_potential_volume TEXT,
+                counter_potential_value TEXT,
+
+                -- Category
+                retailer_category TEXT,
+                retailer_category1 TEXT,
+                retailer_classification TEXT,
+
+                -- Dates
+                dob TEXT,
+                creation_date TEXT,
+                onboarded_at TEXT DEFAULT CURRENT_TIMESTAMP,
+
+                -- Status
+                status TEXT DEFAULT 'active',
+                approval_remarks TEXT,
+
+                -- Registration tracking
+                registration_completed INTEGER DEFAULT 1,
+                otp_verified INTEGER DEFAULT 1,
+
+                -- External DB tracking (for audit)
+                external_db_id INTEGER,
+                external_approval_status TEXT,
+                external_process_status TEXT
+            )
+        `);
+
+        // Create indexes for retailers
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_retailers_mobile ON retailers(mobile_number)`);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_retailers_code ON retailers(retailer_code)`);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_retailers_email ON retailers(email)`);
+
+        console.log("✅ Tables created: customers, products, companies, sales, sale_items, groups, group_members, automations, automation_messages, communication_log, retailers");
 
         // 4. Seed Basic Data with Indian Names
         console.log("🌱 Seeding data...");

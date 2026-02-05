@@ -11,7 +11,7 @@ export async function syncData() {
     try {
         // Fetch All Application Data in Parallel
         // Every query has .catch() so one failure doesn't break the entire sync
-        const [customers, products, sales, saleItems, companies, groups, groupMembers, automations, automationMessages, communications, schemes] = await Promise.all([
+        const [customers, products, sales, saleItems, companies, groups, groupMembers, automations, automationMessages, communications, schemes, retailers] = await Promise.all([
             query("SELECT * FROM customers").catch(e => { console.error("Sync customers failed:", e); return []; }),
             query("SELECT * FROM products").catch(e => { console.error("Sync products failed:", e); return []; }),
             query("SELECT * FROM sales ORDER BY date DESC").catch(e => { console.error("Sync sales failed:", e); return []; }),
@@ -22,7 +22,8 @@ export async function syncData() {
             query("SELECT * FROM automations ORDER BY created_at DESC").catch(e => { console.error("Sync automations failed:", e); return []; }),
             query("SELECT * FROM automation_messages ORDER BY scheduled_date").catch(e => { console.error("Sync automation_messages failed:", e); return []; }),
             query("SELECT * FROM communication_log ORDER BY sent_at DESC").catch(e => { console.error("Sync communications failed:", e); return []; }),
-            query("SELECT * FROM schemes WHERE status = 'active' ORDER BY brand, name").catch(e => { console.error("Sync schemes failed:", e); return []; })
+            query("SELECT * FROM schemes WHERE status = 'active' ORDER BY brand, name").catch(e => { console.error("Sync schemes failed:", e); return []; }),
+            query("SELECT * FROM retailers ORDER BY onboarded_at DESC").catch(e => { console.error("Sync retailers failed:", e); return []; })
         ]);
 
         // Map to global window storage
@@ -38,6 +39,7 @@ export async function syncData() {
             automationMessages: automationMessages || [],
             communications: communications || [],
             schemes: schemes || [],
+            retailers: retailers || [],
             // Empty placeholders for other apps to prevent UI crashes
             inventoryLogs: [],
             inquiries: [],
@@ -68,6 +70,6 @@ export async function syncData() {
 window.getCache = () => window._db_cache || {
     customers: [], sales: [], products: [], saleItems: [], companies: [],
     groups: [], groupMembers: [], automations: [], automationMessages: [],
-    communications: [], schemes: [], inventoryLogs: [], inquiries: [],
+    communications: [], schemes: [], retailers: [], inventoryLogs: [], inquiries: [],
     repairs: [], marketplace: [], campaigns: [], bookings: []
 };

@@ -2,13 +2,22 @@ import { createClient } from "@libsql/client";
 
 // Database Configuration
 // Note: In a production environment, these should be env variables
-const config = {
+
+// App Database (Main application data)
+const appConfig = {
     url: "libsql://retailer-os-digitalhues.aws-ap-south-1.turso.io",
     authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzAxODY2NzMsImlkIjoiNDcwMDliODAtYmJlYS00YzQ3LTk1MzQtY2NlYjg4OWUzYjFjIiwicmlkIjoiNTk1ODMwNWEtMjlkNy00OGU5LWJkNTctN2FiZWVjNzVjMWYwIn0.381aJkYkBtcCsSDyQkFNLZud9lOPi9TuT3uRZgLYS9BqrjLFb0Zc7P1qRWN0k16XkHQ7raDwhCUE9H1G8Q80BA",
 };
 
-// Initialize the Turso client
-const client = createClient(config);
+// External Approved Retailers Database
+const approvedConfig = {
+    url: "libsql://retailer-data-digitalhues.aws-ap-south-1.turso.io",
+    authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzAyODMwNTgsImlkIjoiZTVmNzQ5MjMtMDFiMi00YzkxLTlmMjEtZTJhZDIxMzBmMmZmIiwicmlkIjoiZjQzNTc5NTMtN2E2OS00M2UzLWE3MWUtNDcyYzk1MWM1NTRiIn0.8dOIX1XeNnJswuRGhacgPypg_h_9_-bRAwBxtKhBX7rJ4bQuEtSz9Z6igZsvGrWxDlsYlHMo4V3KKIuIZRSuBA",
+};
+
+// Initialize the Turso clients
+const client = createClient(appConfig);
+const approvedClient = createClient(approvedConfig);
 
 /**
  * Universal query handler
@@ -158,11 +167,146 @@ export const db = {
         getAll: () => query("SELECT * FROM communication_log ORDER BY sent_at DESC"),
         getByCustomer: (customerId) => query("SELECT * FROM communication_log WHERE customer_id = ? ORDER BY sent_at DESC", [customerId]),
         add: (c) => query(
-            `INSERT INTO communication_log (id, customer_id, type, direction, content, sent_at, automation_id, sale_id, status) 
+            `INSERT INTO communication_log (id, customer_id, type, direction, content, sent_at, automation_id, sale_id, status)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [c.id, c.customer_id, c.type, c.direction || 'outgoing', c.content, c.sent_at || new Date().toISOString(), 
+            [c.id, c.customer_id, c.type, c.direction || 'outgoing', c.content, c.sent_at || new Date().toISOString(),
              c.automation_id || null, c.sale_id || null, c.status || 'sent']
         ),
         updateStatus: (id, status) => query("UPDATE communication_log SET status = ? WHERE id = ?", [status, id])
+    },
+    approved: {
+        // Check if mobile number is approved
+        checkApproval: async (mobileNumber) => {
+            const sql = `
+                SELECT * FROM retailers
+                WHERE MobileNumber = ?
+                AND process_status = 'approved'
+                AND Approval_Status = 'Approved'
+                LIMIT 1
+            `;
+            try {
+                const result = await approvedClient.execute({ sql, args: [mobileNumber] });
+                return result.rows.length > 0 ? result.rows[0] : null;
+            } catch (err) {
+                console.error("Error checking approval:", err.message);
+                throw err;
+            }
+        },
+        // Get full retailer details by mobile
+        getByMobile: async (mobileNumber) => {
+            const sql = "SELECT * FROM retailers WHERE MobileNumber = ? LIMIT 1";
+            try {
+                const result = await approvedClient.execute({ sql, args: [mobileNumber] });
+                return result.rows.length > 0 ? result.rows[0] : null;
+            } catch (err) {
+                console.error("Error fetching retailer:", err.message);
+                throw err;
+            }
+        }
+    },
+    retailers: {
+        // Check if retailer already registered
+        isRegistered: async (mobileNumber) => {
+            const sql = "SELECT id FROM retailers WHERE mobile_number = ? LIMIT 1";
+            const result = await client.execute({ sql, args: [mobileNumber] });
+            return result.rows.length > 0;
+        },
+        // Generate unique retailer code
+        generateCode: async () => {
+            // Format: ROS-YYYYMMDD-XXXX (e.g., ROS-20260205-0001)
+            const date = new Date();
+            const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+
+            // Get today's count
+            const sql = "SELECT COUNT(*) as count FROM retailers WHERE retailer_code LIKE ?";
+            const result = await client.execute({
+                sql,
+                args: [`ROS-${dateStr}-%`]
+            });
+            const count = parseInt(result.rows[0].count) + 1;
+            const sequence = count.toString().padStart(4, '0');
+
+            return `ROS-${dateStr}-${sequence}`;
+        },
+        // Add new retailer from approved data
+        add: async (approvedData) => {
+            const retailerCode = await db.retailers.generateCode();
+            const id = `retailer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+            const sql = `
+                INSERT INTO retailers (
+                    id, retailer_code, retailer_name, contact_person, email,
+                    mobile_number, phone_number, address_line_1, address_line_2,
+                    country_name, state_name, city_name, district_name, area_name, pin_code,
+                    vat_number, pan_number, bank_name, bank_account_holder, bank_account_number,
+                    bank_branch, bank_ifsc, parent_retailer_name, nd_name, rds_name,
+                    salesman_name, reporting_to_name, csa_on_counter, counter_potential_volume,
+                    counter_potential_value, retailer_category, retailer_category1,
+                    retailer_classification, dob, creation_date, approval_remarks,
+                    external_db_id, external_approval_status, external_process_status,
+                    status, onboarded_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            `;
+
+            await client.execute({
+                sql,
+                args: [
+                    id,
+                    retailerCode,
+                    approvedData.RetailerName,
+                    approvedData.ContactPerson,
+                    approvedData.Email,
+                    approvedData.MobileNumber,
+                    approvedData.PhoneNumber,
+                    approvedData.Address_Line_1,
+                    approvedData.Address_Line_2,
+                    approvedData.CountryName,
+                    approvedData.StateName,
+                    approvedData.CityName,
+                    approvedData.DistrictName,
+                    approvedData.AreaName,
+                    approvedData.PinCode,
+                    approvedData.VATNnumber,
+                    approvedData.PAN_Number,
+                    approvedData.Name_of_Bank,
+                    approvedData.Name_of_Bank_Account_Holder,
+                    approvedData.Bank_Account_Number,
+                    approvedData.Branch_Location,
+                    approvedData.IFSC_Code,
+                    approvedData.ParentRetailerName,
+                    approvedData.NDName,
+                    approvedData.RDSName,
+                    approvedData.SalesmanName,
+                    approvedData.Reporting_To_Name,
+                    approvedData.CSA_on_Counter,
+                    approvedData.Counter_Potential_in_Volume,
+                    approvedData.Counter_Potential_in_Value,
+                    approvedData.Retailer_Category,
+                    approvedData.RETAILER_CATEGORY1,
+                    approvedData.RETAILER_CLASSIFICATION,
+                    approvedData.DOB,
+                    approvedData.Creation_Date,
+                    approvedData.ApprovalRemarks,
+                    approvedData.id,
+                    approvedData.Approval_Status,
+                    approvedData.process_status,
+                    'active'
+                ]
+            });
+
+            return { id, retailerCode };
+        },
+        // Get retailer by ID
+        getById: async (id) => {
+            const sql = "SELECT * FROM retailers WHERE id = ?";
+            const result = await client.execute({ sql, args: [id] });
+            return result.rows[0] || null;
+        },
+        // Get all retailers
+        getAll: async () => {
+            const sql = "SELECT * FROM retailers ORDER BY onboarded_at DESC";
+            const result = await client.execute(sql);
+            return result.rows;
+        }
     }
 };

@@ -199,6 +199,8 @@ function renderStepContent(step) {
             </div>
         `;
     } else if (step === 3) {
+        const approvedData = window._approvedRetailerData || {};
+
         stepContent = `
             <div class="animate-slide-up w-full max-w-md mx-auto px-4 md:px-0">
                 <header class="flex items-center justify-between mb-6 md:mb-8">
@@ -216,10 +218,13 @@ function renderStepContent(step) {
 
                 <div class="space-y-3 mb-6 md:mb-8">
                     ${[
-                { l: 'STORE NAME', v: 'Luxe Retail Collective' },
-                { l: 'OWNER NAME', v: 'Alexander Sterling' },
-                { l: 'MOBILE NUMBER', v: '+1 (555) 012-3456' },
-                { l: 'GSTIN', v: '22AAAAA0000A1Z5' }
+                { l: 'STORE NAME', v: approvedData.RetailerName || 'N/A' },
+                { l: 'OWNER NAME', v: approvedData.ContactPerson || 'N/A' },
+                { l: 'MOBILE NUMBER', v: approvedData.MobileNumber || 'N/A' },
+                { l: 'GSTIN', v: approvedData.VATNnumber || 'N/A' },
+                { l: 'EMAIL', v: approvedData.Email || 'N/A' },
+                { l: 'CITY', v: approvedData.CityName || 'N/A' },
+                { l: 'STATE', v: approvedData.StateName || 'N/A' }
             ].map(item => `
                         <div class="card p-4 border-slate-100 flex items-center justify-between">
                             <div class="text-left flex-1 min-w-0">
@@ -229,28 +234,9 @@ function renderStepContent(step) {
                              <div class="w-5 h-5 bg-slate-950 rounded-md flex items-center justify-center shrink-0 ml-3"><span class="material-icons-outlined text-white text-xs">done</span></div>
                         </div>
                     `).join('')}
-
-                    <div class="card p-4 border-slate-100 flex items-center justify-between">
-                        <div class="text-left flex-1">
-                            <p class="text-[7px] font-black text-indigo-400 uppercase tracking-widest mb-1">STORE TYPE</p>
-                            <p class="text-[11px] font-black text-slate-900">Multi-store Operations</p>
-                        </div>
-                        <div class="w-10 h-5 bg-slate-950 rounded-full relative cursor-pointer shrink-0"><div class="w-3 h-3 bg-white rounded-full absolute right-1 top-1"></div></div>
-                    </div>
                 </div>
 
-                 <div class="card p-4 border-slate-100 mb-8 md:mb-12 flex items-center gap-3 md:gap-4 bg-slate-50/50 border-dashed">
-                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-slate-300 shrink-0">
-                        <span class="material-icons-outlined">public</span>
-                    </div>
-                    <div class="flex-1 text-left min-w-0">
-                        <p class="text-[10px] font-black text-slate-950 leading-none mb-1">Set Up Custom Domain</p>
-                        <p class="text-[8px] font-bold text-slate-400">Link your own URL to your storefront</p>
-                    </div>
-                    <button class="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[8px] font-black uppercase shrink-0 active:scale-95 transition-transform">Connect</button>
-                </div>
-
-                <button onclick="window.setLoginStatus(true)" class="w-full py-5 md:py-4 bg-black text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl ring-8 ring-black/5 active:scale-98 transition-transform">
+                <button onclick="window.finalizeRegistration()" class="w-full py-5 md:py-4 bg-black text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl ring-8 ring-black/5 active:scale-98 transition-transform">
                     Finalize Setup
                 </button>
                 <p class="text-[8px] font-black text-indigo-400 uppercase tracking-[0.2em] mt-4 md:mt-6 opacity-40 text-center">Details can be edited later in settings</p>
@@ -327,7 +313,7 @@ window.handleOtpPaste = function(event) {
     }
 };
 
-window.requestOtp = function() {
+window.requestOtp = async function() {
     const mobileInput = document.getElementById('mobile-input');
     const mobile = mobileInput ? mobileInput.value.trim() : '';
 
@@ -336,17 +322,51 @@ window.requestOtp = function() {
         return;
     }
 
-    // In a real app, you'd send OTP via API here
-    console.log('Sending OTP to:', mobile);
+    // Check if mobile is approved in external DB
+    try {
+        const { db } = await import('../../utils/db.js');
 
-    // Move to step 2
-    window.setRegistrationStep(2);
+        // Check if already registered
+        const isRegistered = await db.retailers.isRegistered(mobile);
+        if (isRegistered) {
+            alert('This mobile number is already registered. Please login instead.');
+            window.setAuthMode('login');
+            return;
+        }
 
-    // Auto-focus first OTP input after render
-    setTimeout(() => {
-        const firstInput = document.getElementById('otp-0');
-        if (firstInput) firstInput.focus();
-    }, 100);
+        // Check approval status in external DB
+        const approvedRetailer = await db.approved.checkApproval(mobile);
+        if (!approvedRetailer) {
+            alert('This mobile number is not approved for registration. Please contact support.');
+            return;
+        }
+
+        // Store approved data temporarily for later use
+        window._approvedRetailerData = approvedRetailer;
+
+        // Send OTP (implement actual OTP service)
+        console.log('Sending OTP to:', mobile);
+
+        // Move to step 2
+        window.setRegistrationStep(2);
+
+        setTimeout(() => {
+            const firstInput = document.getElementById('otp-0');
+            if (firstInput) firstInput.focus();
+        }, 100);
+
+    } catch (error) {
+        console.error('Approval check failed:', error);
+
+        // Provide more specific error messages
+        if (error.message && error.message.includes('401')) {
+            alert('Database authentication error. Please contact the system administrator.\n\nTechnical: External database token has expired.');
+        } else if (error.message && error.message.includes('network')) {
+            alert('Network connection error. Please check your internet connection and try again.');
+        } else {
+            alert('Unable to verify approval status. Please try again.\n\nIf the problem persists, contact support.\n\nError: ' + error.message);
+        }
+    }
 };
 
 window.verifyOtp = function() {
@@ -389,4 +409,38 @@ window.resendOtp = function() {
     // In a real app, you'd resend OTP via API here
     console.log('Resending OTP...');
     alert('OTP has been resent successfully!');
+};
+
+window.finalizeRegistration = async function() {
+    try {
+        const approvedData = window._approvedRetailerData;
+        if (!approvedData) {
+            alert('Session expired. Please start registration again.');
+            window.setRegistrationStep(1);
+            return;
+        }
+
+        const { db } = await import('../../utils/db.js');
+
+        // Add retailer to app database
+        const newRetailer = await db.retailers.add(approvedData);
+
+        // Store in localStorage
+        localStorage.setItem('retaileros_logged_in', 'true');
+        localStorage.setItem('retaileros_retailer_id', newRetailer.id);
+        localStorage.setItem('retaileros_retailer_code', newRetailer.retailerCode);
+        localStorage.setItem('retaileros_retailer_name', approvedData.RetailerName);
+
+        // Clear temporary data
+        delete window._approvedRetailerData;
+
+        // Set login status
+        window.setLoginStatus(true);
+
+        console.log('Registration completed successfully:', newRetailer);
+
+    } catch (error) {
+        console.error('Registration failed:', error);
+        alert('Registration failed. Please try again.');
+    }
 };

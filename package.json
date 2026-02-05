@@ -2,6 +2,7 @@
     "name": "retailer-os-ui",
     "version": "1.0.0",
     "description": "RetailerOS Launcher UI",
+    "type": "module",
     "main": "index.html",
     "scripts": {
         "dev": "vite",
