@@ -20,6 +20,10 @@
 - [x] **Phase 5:** Login flow — real DB-backed authentication by mobile number or store code
 - [x] **Phase 6:** Created 2 demo retailers (TechZone Electronics + Digital World) with isolated sample data
 - [x] Settings > Store page already shows all retailer info (40+ fields)
+- [x] **Comprehensive Tenant Audit:** Fixed ALL db.js getById/update/delete queries with retailer_id filtering
+- [x] **Missing Tables:** Added inquiries, repairs, inventory_logs tables with retailer_id + indexes (schema + live migration)
+- [x] **Module Fixes:** Replaced all raw db.query() calls in capture.js, resolve.js, intake.js, status.js, inward.js with tenant-safe db helpers
+- [x] **Sync Update:** inquiries, repairs, inventory_logs now synced from DB (no longer empty placeholders)
 
 ---
 
@@ -61,7 +65,7 @@ _(none currently)_
 ## Architecture Notes
 
 ### Multi-Tenant Design
-- **Tenant-scoped tables** (filtered by `retailer_id`): customers, companies, sales, groups, group_members, automations, automation_messages, communication_log
+- **Tenant-scoped tables** (filtered by `retailer_id`): customers, companies, sales, groups, group_members, automations, automation_messages, communication_log, inquiries, repairs, inventory_logs
 - **Global tables** (shared across all retailers): products, schemes, sale_items (inherits via sale_id join), retailers
 - **Tenant identity**: stored in `state.retailerId` + localStorage, used by all db helpers and sync
 - **Login**: authenticates by mobile number or store code against `retailers` table
@@ -74,5 +78,6 @@ _(none currently)_
 - `src/js/modules/auth/login.js` — real DB-backed login
 - `src/js/modules/settings/store.js` — store profile display (40+ fields)
 - `setup_db.js` — schema with `retailer_id` columns
-- `migrate_add_retailer_id.js` — live DB migration script
+- `migrate_add_retailer_id.js` — live DB migration script (Phase 1)
+- `migrate_add_missing_tables.js` — adds inquiries, repairs, inventory_logs tables
 - `seed_demo_retailers.js` — demo data seeding
