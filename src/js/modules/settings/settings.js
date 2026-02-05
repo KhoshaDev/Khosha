@@ -18,6 +18,7 @@ import { renderSettingsTheme } from './theme.js';
 import { renderSettingsHelp } from './help.js';
 
 export function renderSettings(mode) {
+    const isMobile = mode === 'mobile';
     const isDesktopSecondary = mode === 'desktop-secondary';
 
     // Helper to switch settings view
@@ -56,56 +57,25 @@ export function renderSettings(mode) {
         window.setSettingsSubView('detail');
     };
 
-    if (isDesktopSecondary) {
-        if (state.settingsView === 'roles') {
-            return renderSettingsRoles();
-        }
-        if (state.settingsView === 'accounting') {
-            return renderSettingsAccounting();
-        }
-        if (state.settingsView === 'ledger') {
-            return renderSettingsLedger();
-        }
-        if (state.settingsView === 'ai') {
-            return renderAISettings();
-        }
-        if (state.settingsView === 'store') {
-            return renderSettingsStore();
-        }
-        if (state.settingsView === 'security') {
-            return renderSettingsSecurity();
-        }
-        if (state.settingsView === 'alerts') {
-            return renderSettingsAlerts();
-        }
-        if (state.settingsView === 'taxes') {
-            return renderSettingsTaxes();
-        }
-        if (state.settingsView === 'plugins') {
-            return renderSettingsPlugins();
-        }
-        if (state.settingsView === 'teams') {
-            return renderSettingsTeams();
-        }
-        if (state.settingsView === 'logs') {
-            return renderSettingsLogs();
-        }
-        if (state.settingsView === 'lang') {
-            return renderSettingsLang();
-        }
-        if (state.settingsView === 'backup') {
-            return renderSettingsBackup();
-        }
-        if (state.settingsView === 'updates') {
-            return renderSettingsUpdates();
-        }
-        if (state.settingsView === 'theme') {
-            return renderSettingsTheme();
-        }
-        if (state.settingsView === 'help') {
-            return renderSettingsHelp();
-        }
-        return '';
+    // Sub-app routing — applies to desktop secondary pane AND mobile when a view is selected
+    if (isDesktopSecondary || (isMobile && state.settingsView)) {
+        if (state.settingsView === 'roles') return renderSettingsRoles();
+        if (state.settingsView === 'accounting') return renderSettingsAccounting();
+        if (state.settingsView === 'ledger') return renderSettingsLedger();
+        if (state.settingsView === 'ai') return renderAISettings();
+        if (state.settingsView === 'store') return renderSettingsStore();
+        if (state.settingsView === 'security') return renderSettingsSecurity();
+        if (state.settingsView === 'alerts') return renderSettingsAlerts();
+        if (state.settingsView === 'taxes') return renderSettingsTaxes();
+        if (state.settingsView === 'plugins') return renderSettingsPlugins();
+        if (state.settingsView === 'teams') return renderSettingsTeams();
+        if (state.settingsView === 'logs') return renderSettingsLogs();
+        if (state.settingsView === 'lang') return renderSettingsLang();
+        if (state.settingsView === 'backup') return renderSettingsBackup();
+        if (state.settingsView === 'updates') return renderSettingsUpdates();
+        if (state.settingsView === 'theme') return renderSettingsTheme();
+        if (state.settingsView === 'help') return renderSettingsHelp();
+        if (isDesktopSecondary) return '';
     }
 
     return renderSettingsDashboard(mode);
