@@ -159,6 +159,9 @@ function renderStepContent(step) {
             </div>
         `;
     } else if (step === 2) {
+        const approvedData = window._approvedRetailerData || {};
+        const mobileNumber = approvedData.MobileNumber || 'your number';
+
         stepContent = `
             <div class="animate-slide-up w-full max-w-sm mx-auto px-4 md:px-0">
                  <header class="flex items-center justify-between mb-8 md:mb-12 w-full">
@@ -171,7 +174,11 @@ function renderStepContent(step) {
 
                 <div class="text-left w-full">
                     <h1 class="text-3xl md:text-4xl font-black tracking-tighter text-slate-900 mb-2">Verify OTP</h1>
-                    <p class="text-xs md:text-[11px] font-bold text-slate-400 leading-relaxed mb-6 md:mb-8">We've sent a 6-digit code to <span class="text-slate-950">+91 98765 43210</span></p>
+                    <p class="text-xs md:text-[11px] font-bold text-slate-400 leading-relaxed mb-2">We've sent a 6-digit code to <span class="text-slate-950">+91 ${mobileNumber}</span></p>
+                    <div class="mb-6 md:mb-8 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p class="text-[10px] font-bold text-blue-600 mb-1">💡 Development Mode</p>
+                        <p class="text-[9px] text-blue-500">Use default OTP: <span class="font-black text-blue-700">444619</span> or any 6-digit code</p>
+                    </div>
 
                     <div class="grid grid-cols-6 gap-2 md:gap-2 mb-6 md:mb-8" id="otp-container">
                         ${[0, 1, 2, 3, 4, 5].map((idx) => `
@@ -386,8 +393,18 @@ window.verifyOtp = function() {
         return;
     }
 
+    // Default OTP for development/testing
+    const DEFAULT_OTP = '444619';
+
     // In a real app, you'd verify OTP via API here
     console.log('Verifying OTP:', otp);
+
+    // For development: Accept default OTP or any 6-digit code
+    if (otp === DEFAULT_OTP) {
+        console.log('✅ Default OTP accepted:', DEFAULT_OTP);
+    } else {
+        console.log('ℹ️  Development mode: Any OTP accepted');
+    }
 
     // Move to step 3
     window.setRegistrationStep(3);
