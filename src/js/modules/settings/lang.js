@@ -32,7 +32,7 @@ export function renderSettingsLang() {
                 <!-- App Language -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full"></span> App Language
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> App Language
                     </p>
                     <div class="grid grid-cols-2 gap-2 text-left">
                         ${languages.map(l => `
@@ -51,7 +51,7 @@ export function renderSettingsLang() {
                 <!-- Customer Communication Language -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Customer Communication
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Customer Communication
                     </p>
                     <div class="card p-4 space-y-4 text-left">
                         <div class="flex items-center justify-between text-left">
@@ -82,7 +82,7 @@ export function renderSettingsLang() {
                 <!-- Regional Formats -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-amber-400 rounded-full"></span> Regional Formats
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Regional Formats
                     </p>
                     <div class="space-y-3 text-left">
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -143,7 +143,7 @@ export function renderSettingsLang() {
                 </div>
 
                 <div class="p-6 pt-0 text-left">
-                    <button onclick="window.toast.info('Language preferences saved')" class="w-full py-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] transition-transform">
+                    <button onclick="window.toast.info('Language preferences saved')" class="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
                         Save Preferences
                     </button>
                 </div>

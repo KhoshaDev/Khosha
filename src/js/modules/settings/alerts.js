@@ -25,7 +25,7 @@ export function renderSettingsAlerts() {
                 <!-- Notification Channels -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Notification Channels
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Notification Channels
                     </p>
                     <div class="space-y-3 text-left">
                         ${[
@@ -36,8 +36,8 @@ export function renderSettingsAlerts() {
                         ].map(ch => `
                             <div class="card p-4 flex items-center justify-between text-left">
                                 <div class="flex items-center gap-3 text-left">
-                                    <div class="w-10 h-10 bg-${ch.color}-50 rounded-xl flex items-center justify-center">
-                                        <span class="material-icons-outlined text-${ch.color}-500">${ch.icon}</span>
+                                    <div class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center">
+                                        <span class="material-icons-outlined text-slate-500">${ch.icon}</span>
                                     </div>
                                     <div class="text-left">
                                         <p class="text-xs font-black text-slate-900">${ch.name}</p>
@@ -46,7 +46,7 @@ export function renderSettingsAlerts() {
                                 </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" class="sr-only peer" ${ch.on ? 'checked' : ''}>
-                                    <div class="w-9 h-5 bg-slate-200 peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                    <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                                 </label>
                             </div>
                         `).join('')}
@@ -56,7 +56,7 @@ export function renderSettingsAlerts() {
                 <!-- Inventory Alerts -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-red-400 rounded-full"></span> Inventory Alerts
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Inventory Alerts
                     </p>
                     <div class="space-y-3 text-left">
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -66,7 +66,7 @@ export function renderSettingsAlerts() {
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" checked>
-                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -88,7 +88,7 @@ export function renderSettingsAlerts() {
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" checked>
-                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
                     </div>
@@ -97,7 +97,7 @@ export function renderSettingsAlerts() {
                 <!-- Sales Alerts -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-blue-400 rounded-full"></span> Sales & Revenue
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Sales & Revenue
                     </p>
                     <div class="space-y-3 text-left">
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -107,7 +107,7 @@ export function renderSettingsAlerts() {
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" checked>
-                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -129,7 +129,7 @@ export function renderSettingsAlerts() {
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer">
-                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
                     </div>
@@ -138,7 +138,7 @@ export function renderSettingsAlerts() {
                 <!-- Customer Alerts -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-purple-400 rounded-full"></span> Customer Engagement
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Customer Engagement
                     </p>
                     <div class="space-y-3 text-left">
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -148,7 +148,7 @@ export function renderSettingsAlerts() {
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" checked>
-                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -158,7 +158,7 @@ export function renderSettingsAlerts() {
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" checked>
-                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
                     </div>
@@ -167,7 +167,7 @@ export function renderSettingsAlerts() {
                 <!-- Repair & Service -->
                 <div class="p-6 space-y-4 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-orange-400 rounded-full"></span> Repairs & Service
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Repairs & Service
                     </p>
                     <div class="space-y-3 text-left">
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -177,7 +177,7 @@ export function renderSettingsAlerts() {
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" checked>
-                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -187,14 +187,14 @@ export function renderSettingsAlerts() {
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" checked>
-                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
                     </div>
                 </div>
 
                 <div class="p-6 pt-0 text-left">
-                    <button onclick="window.toast.info('Alert preferences saved')" class="w-full py-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] transition-transform">
+                    <button onclick="window.toast.info('Alert preferences saved')" class="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
                         Save Alert Preferences
                     </button>
                 </div>

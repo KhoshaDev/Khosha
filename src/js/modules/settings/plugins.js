@@ -86,11 +86,11 @@ export function renderSettingsPlugins() {
                 <!-- Connected -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Connected
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Connected
                     </p>
                     <div class="space-y-3 text-left">
                         ${plugins.filter(p => p.status === 'connected').map(p => `
-                            <div class="card p-5 border-green-100 bg-green-50/30 text-left">
+                            <div class="card p-5 border-slate-200 bg-slate-50/30 text-left">
                                 <div class="flex items-start justify-between text-left">
                                     <div class="flex items-start gap-4 text-left">
                                         <div class="w-12 h-12 bg-${p.color}-100 rounded-2xl flex items-center justify-center shrink-0">

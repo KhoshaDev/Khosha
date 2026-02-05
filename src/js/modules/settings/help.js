@@ -44,7 +44,7 @@ export function renderSettingsHelp() {
                 <!-- Quick Support -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Quick Support
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Quick Support
                     </p>
                     <div class="grid grid-cols-2 gap-3 text-left">
                         <button onclick="window.toast.info('Opening WhatsApp support...')" class="card p-4 text-center hover:border-green-300 hover:bg-green-50/30 transition-all">
@@ -73,13 +73,13 @@ export function renderSettingsHelp() {
                 <!-- Video Guides -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-blue-400 rounded-full"></span> Guides & Tutorials
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Guides & Tutorials
                     </p>
                     <div class="space-y-3 text-left">
                         ${guides.map(g => `
                             <button onclick="window.toast.info('Guide: ${g.title} — coming soon')" class="card p-4 flex items-center gap-4 text-left w-full hover:border-slate-300 transition-all">
-                                <div class="w-10 h-10 bg-${g.color}-50 rounded-xl flex items-center justify-center shrink-0">
-                                    <span class="material-icons-outlined text-${g.color}-500">${g.icon}</span>
+                                <div class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center shrink-0">
+                                    <span class="material-icons-outlined text-slate-500">${g.icon}</span>
                                 </div>
                                 <div class="flex-1 text-left">
                                     <p class="text-xs font-black text-slate-900">${g.title}</p>
@@ -94,7 +94,7 @@ export function renderSettingsHelp() {
                 <!-- FAQ -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-purple-400 rounded-full"></span> Frequently Asked Questions
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Frequently Asked Questions
                     </p>
                     <div class="space-y-2 text-left">
                         ${faqs.map((faq, i) => `
@@ -140,7 +140,7 @@ export function renderSettingsHelp() {
 
                 <!-- Report Bug -->
                 <div class="p-6 pt-0 text-left">
-                    <button onclick="window.toast.info('Bug report form coming soon')" class="w-full py-4 bg-white border border-slate-200 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
+                    <button onclick="window.toast.info('Bug report form coming soon')" class="w-full py-4 bg-white border border-slate-200 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
                         <span class="material-icons-outlined text-sm">bug_report</span> Report a Bug
                     </button>
                 </div>

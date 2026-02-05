@@ -34,7 +34,7 @@ export function renderSettingsTheme() {
                 <!-- Mode -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full"></span> Mode
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Mode
                     </p>
                     <div class="grid grid-cols-3 gap-3 text-left">
                         ${[
@@ -54,7 +54,7 @@ export function renderSettingsTheme() {
                 <!-- Accent Color -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-blue-400 rounded-full"></span> Accent Color
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Accent Color
                     </p>
                     <div class="grid grid-cols-4 gap-3 text-left">
                         ${accents.map(a => `
@@ -69,7 +69,7 @@ export function renderSettingsTheme() {
                 <!-- Layout Density -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Layout Density
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Layout Density
                     </p>
                     <div class="space-y-3 text-left">
                         ${[
@@ -94,7 +94,7 @@ export function renderSettingsTheme() {
                 <!-- Font Size -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-amber-400 rounded-full"></span> Font Size
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Font Size
                     </p>
                     <div class="card p-5 text-left">
                         <div class="flex items-center justify-between mb-3 text-left">
@@ -109,7 +109,7 @@ export function renderSettingsTheme() {
                 <!-- Sidebar -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-purple-400 rounded-full"></span> Sidebar
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Sidebar
                     </p>
                     <div class="space-y-3 text-left">
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -119,7 +119,7 @@ export function renderSettingsTheme() {
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer">
-                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -129,7 +129,7 @@ export function renderSettingsTheme() {
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" class="sr-only peer" checked>
-                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
                     </div>
@@ -147,13 +147,13 @@ export function renderSettingsTheme() {
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" class="sr-only peer" checked>
-                            <div class="w-9 h-5 bg-slate-200 peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                            <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                         </label>
                     </div>
                 </div>
 
                 <div class="p-6 pt-0 text-left">
-                    <button onclick="window.toast.info('Theme preferences saved')" class="w-full py-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] transition-transform">
+                    <button onclick="window.toast.info('Theme preferences saved')" class="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
                         Apply Theme
                     </button>
                 </div>

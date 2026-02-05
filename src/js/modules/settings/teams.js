@@ -60,20 +60,20 @@ export function renderSettingsTeams() {
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <div class="flex items-center justify-between text-left">
                         <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                            <span class="w-1.5 h-1.5 bg-blue-400 rounded-full"></span> Team Members
+                            <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Team Members
                         </p>
                     </div>
                     <div class="space-y-3 text-left">
                         ${members.map((m, i) => `
                             <div class="card p-4 flex items-center justify-between text-left ${m.status === 'invited' ? 'border-dashed border-amber-200 bg-amber-50/20' : ''}">
                                 <div class="flex items-center gap-3 text-left">
-                                    <div class="w-10 h-10 ${i === 0 ? 'bg-indigo-100' : 'bg-slate-100'} rounded-full flex items-center justify-center">
-                                        <span class="material-icons-outlined ${i === 0 ? 'text-indigo-500' : 'text-slate-400'}">${m.avatar}</span>
+                                    <div class="w-10 h-10 ${i === 0 ? 'bg-slate-100' : 'bg-slate-100'} rounded-full flex items-center justify-center">
+                                        <span class="material-icons-outlined ${i === 0 ? 'text-slate-500' : 'text-slate-400'}">${m.avatar}</span>
                                     </div>
                                     <div class="text-left">
                                         <div class="flex items-center gap-2 text-left">
                                             <p class="text-xs font-black text-slate-900">${m.name}</p>
-                                            ${i === 0 ? '<span class="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-600">You</span>' : ''}
+                                            ${i === 0 ? '<span class="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-slate-900 text-white">You</span>' : ''}
                                         </div>
                                         <p class="text-[9px] font-bold text-slate-400">${m.role} &middot; ${m.phone}</p>
                                     </div>
@@ -93,7 +93,7 @@ export function renderSettingsTeams() {
                 <!-- Roles & Permissions -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Roles & Permissions
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Roles & Permissions
                     </p>
                     <div class="space-y-3 text-left">
                         ${roles.map(r => `
@@ -114,7 +114,7 @@ export function renderSettingsTeams() {
                 <!-- Module Access Matrix -->
                 <div class="p-6 space-y-4 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
-                        <span class="w-1.5 h-1.5 bg-purple-400 rounded-full"></span> Quick Access Matrix
+                        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Quick Access Matrix
                     </p>
                     <div class="card p-4 overflow-x-auto text-left">
                         <table class="w-full text-left">
@@ -151,7 +151,7 @@ export function renderSettingsTeams() {
                 </div>
 
                 <div class="p-6 pt-0 text-left">
-                    <button onclick="window.toast.info('Invite flow coming soon')" class="w-full py-4 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] transition-transform flex items-center justify-center gap-2">
+                    <button onclick="window.toast.info('Invite flow coming soon')" class="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                         <span class="material-icons-outlined text-sm">person_add</span> Invite Team Member
                     </button>
                 </div>
