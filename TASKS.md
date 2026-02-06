@@ -3,7 +3,7 @@
 > This file tracks all tasks for the RetailerOS project. Updated every session.
 > **Branch:** `dev-working`
 > **Netlify:** https://gorgeous-raindrop-78b58d.netlify.app/
-> **Last Updated:** 2026-02-06
+> **Last Updated:** 2026-02-07 (Session 2)
 
 ---
 
@@ -64,6 +64,24 @@
   - Preview pane: generated image display, download, re-generate, refine input
   - Creative tips guide in empty state
   - Uses existing OpenAI API key from Settings > AI Config
+- [x] **Notifications/Alerts Module:** Centralized alert hub scanning all module data:
+  - ALERTS app as first item in launcher grid with red dot badge when notifications exist
+  - 8 notification sources: pending store orders, low stock (≤5 units), draft sales, unresolved inquiries, active repairs, scheduled automations (7d), live campaigns, client birthdays
+  - Color-coded notification cards with icon, count badge, description, and tap-to-navigate
+  - Push notification toggle (persisted in localStorage, default ON)
+  - Desktop secondary pane shows total count summary with category breakdown
+  - Empty state: checkmark + "All Caught Up" when no alerts
+  - `window.getNotificationCount()` exposed globally for badge rendering
+- [x] **Notifications Accordions:** Grouped notifications by category with collapsible accordions (closed by default), count badges, expand/collapse toggle
+- [x] **Removed "RetailerOS" text** from notifications header — clean minimal header
+- [x] **Footer:** Added "A product of Khosha Systems" minimal footer to launcher
+- [x] **PWA Setup:** Full Progressive Web App support:
+  - manifest.json with app name, icons (192x192, 512x512), standalone display mode
+  - Service worker (sw.js) with network-first for pages, cache-first for assets
+  - Favicon (16x16, 32x32), Apple touch icon (180x180)
+  - `apple-mobile-web-app-capable` meta tags — no URL bar in standalone mode
+  - Install prompt in browser, "Add to Home Screen" on mobile
+- [x] **Sales Desk scroll fix:** Fixed mobile scroll jumping when toggling discount/device details sections — preserves scroll position and smoothly scrolls expanded section into view
 
 ---
 
