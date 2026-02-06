@@ -5,31 +5,28 @@ export function renderSettingsLogs() {
         return cache.retailers?.find(r => r.id === rid) || {};
     })();
 
-    const now = new Date();
-    const fmt = (daysAgo, h, m) => {
-        const d = new Date(now);
-        d.setDate(d.getDate() - daysAgo);
-        d.setHours(h, m);
-        return d;
-    };
+    const cache = window.getCache();
+    const dbLogs = cache.activityLogs || [];
 
-    const logs = [
-        { action: 'New sale created', detail: 'ORD-001 — iPhone 15 Pro + AirPods (₹1,50,000)', user: retailer.contact_person || 'Owner', icon: 'shopping_cart', color: 'green', time: fmt(0, 14, 30) },
-        { action: 'Customer added', detail: 'Arjun Malhotra (9876543210)', user: retailer.contact_person || 'Owner', icon: 'person_add', color: 'blue', time: fmt(0, 14, 25) },
-        { action: 'Automation triggered', detail: 'Post-purchase journey for ORD-001', user: 'System', icon: 'smart_toy', color: 'purple', time: fmt(0, 14, 31) },
-        { action: 'Repair job created', detail: 'REP-A1B2C3 — iPhone screen replacement', user: 'Ravi Kumar', icon: 'build', color: 'amber', time: fmt(0, 12, 15) },
-        { action: 'Stock updated', detail: 'iPhone 15 Pro — Stock reduced to 9', user: 'System', icon: 'inventory_2', color: 'slate', time: fmt(0, 14, 30) },
-        { action: 'Login successful', detail: `Browser: Chrome / macOS`, user: retailer.contact_person || 'Owner', icon: 'login', color: 'green', time: fmt(0, 10, 0) },
-        { action: 'Settings changed', detail: 'Tax rates updated for Smartphones', user: retailer.contact_person || 'Owner', icon: 'settings', color: 'indigo', time: fmt(1, 18, 45) },
-        { action: 'New sale created', detail: 'ORD-002 — Samsung AC 1.5T (₹42,000)', user: 'Ravi Kumar', icon: 'shopping_cart', color: 'green', time: fmt(1, 16, 20) },
-        { action: 'Inquiry logged', detail: 'Galaxy S24 Ultra — Budget ₹1.2L', user: 'Priya Nair', icon: 'help_outline', color: 'orange', time: fmt(1, 15, 0) },
-        { action: 'WhatsApp sent', detail: 'Installation reminder to Priya Sharma', user: 'System', icon: 'chat', color: 'green', time: fmt(1, 9, 0) },
-        { action: 'Backup completed', detail: 'Auto backup — 2.4 MB exported', user: 'System', icon: 'cloud_done', color: 'blue', time: fmt(2, 3, 0) },
-        { action: 'Failed login attempt', detail: 'Unknown device — IP 103.xx.xx.xx', user: 'Unknown', icon: 'warning', color: 'red', time: fmt(2, 22, 15) },
-    ];
+    const now = new Date();
+
+    // Use DB logs if available, otherwise show placeholder
+    const logs = dbLogs.length > 0
+        ? dbLogs.map(l => ({
+            action: l.action || 'Activity',
+            detail: l.detail || '',
+            user: l.user_name || 'System',
+            icon: l.icon || 'info',
+            color: l.color || 'slate',
+            time: new Date(l.created_at),
+        }))
+        : [
+            { action: 'No activity yet', detail: 'Actions like sales, settings changes, and logins will appear here', user: 'System', icon: 'info', color: 'slate', time: now },
+        ];
 
     const formatTime = (d) => {
         const diff = Math.floor((now - d) / 60000);
+        if (diff < 1) return 'Just now';
         if (diff < 60) return `${diff}m ago`;
         if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
         if (diff < 2880) return 'Yesterday';
@@ -39,6 +36,32 @@ export function renderSettingsLogs() {
     const formatFullTime = (d) => {
         return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
     };
+
+    // Group logs by day
+    const todayStr = now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toDateString();
+
+    const todayLogs = logs.filter(l => l.time.toDateString() === todayStr);
+    const yesterdayLogs = logs.filter(l => l.time.toDateString() === yesterdayStr);
+    const olderLogs = logs.filter(l => l.time.toDateString() !== todayStr && l.time.toDateString() !== yesterdayStr);
+
+    const renderLog = (l, showRelative) => `
+        <div class="flex items-start gap-3 py-4 border-b border-slate-50 text-left">
+            <div class="w-8 h-8 bg-${l.color}-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                <span class="material-icons-outlined text-${l.color}-500 text-sm">${l.icon}</span>
+            </div>
+            <div class="flex-1 min-w-0 text-left">
+                <div class="flex items-start justify-between gap-2 text-left">
+                    <p class="text-[11px] font-black text-slate-900">${l.action}</p>
+                    <span class="text-[8px] font-bold text-slate-400 whitespace-nowrap shrink-0">${showRelative ? formatTime(l.time) : formatFullTime(l.time)}</span>
+                </div>
+                <p class="text-[10px] font-bold text-slate-500 mt-0.5 truncate">${l.detail}</p>
+                <p class="text-[8px] font-black text-slate-300 uppercase tracking-widest mt-1">${l.user} &middot; ${formatFullTime(l.time)}</p>
+            </div>
+        </div>
+    `;
 
     return `
         <div class="h-full flex flex-col relative bg-white animate-slide-up text-left">
@@ -56,97 +79,46 @@ export function renderSettingsLogs() {
                         <span class="material-icons-outlined text-lg">download</span>
                     </button>
                 </div>
-
-                <!-- Filter Bar -->
-                <div class="flex gap-2 mt-4 text-left overflow-x-auto pb-1">
-                    ${['All', 'Sales', 'Inventory', 'Repairs', 'Auth', 'System'].map((f, i) => `
-                        <button class="px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${i === 0 ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}">${f}</button>
-                    `).join('')}
-                </div>
             </header>
 
             <div class="flex-1 overflow-y-auto custom-scrollbar text-left">
-                <!-- Today -->
-                <div class="px-6 pt-4 pb-2 text-left">
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Today</p>
-                </div>
-                <div class="px-6 text-left">
-                    ${logs.filter(l => {
-                        const d = new Date(l.time);
-                        return d.toDateString() === now.toDateString();
-                    }).map(l => `
-                        <div class="flex items-start gap-3 py-4 border-b border-slate-50 text-left">
-                            <div class="w-8 h-8 bg-${l.color}-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                                <span class="material-icons-outlined text-${l.color}-500 text-sm">${l.icon}</span>
-                            </div>
-                            <div class="flex-1 min-w-0 text-left">
-                                <div class="flex items-start justify-between gap-2 text-left">
-                                    <p class="text-[11px] font-black text-slate-900">${l.action}</p>
-                                    <span class="text-[8px] font-bold text-slate-400 whitespace-nowrap shrink-0">${formatTime(l.time)}</span>
-                                </div>
-                                <p class="text-[10px] font-bold text-slate-500 mt-0.5 truncate">${l.detail}</p>
-                                <p class="text-[8px] font-black text-slate-300 uppercase tracking-widest mt-1">${l.user} &middot; ${formatFullTime(l.time)}</p>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
+                ${todayLogs.length > 0 ? `
+                    <div class="px-6 pt-4 pb-2 text-left">
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Today</p>
+                    </div>
+                    <div class="px-6 text-left">
+                        ${todayLogs.map(l => renderLog(l, true)).join('')}
+                    </div>
+                ` : ''}
 
-                <!-- Yesterday -->
-                <div class="px-6 pt-6 pb-2 text-left">
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Yesterday</p>
-                </div>
-                <div class="px-6 text-left">
-                    ${logs.filter(l => {
-                        const d = new Date(l.time);
-                        const yesterday = new Date(now);
-                        yesterday.setDate(yesterday.getDate() - 1);
-                        return d.toDateString() === yesterday.toDateString();
-                    }).map(l => `
-                        <div class="flex items-start gap-3 py-4 border-b border-slate-50 text-left">
-                            <div class="w-8 h-8 bg-${l.color}-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                                <span class="material-icons-outlined text-${l.color}-500 text-sm">${l.icon}</span>
-                            </div>
-                            <div class="flex-1 min-w-0 text-left">
-                                <div class="flex items-start justify-between gap-2 text-left">
-                                    <p class="text-[11px] font-black text-slate-900">${l.action}</p>
-                                    <span class="text-[8px] font-bold text-slate-400 whitespace-nowrap shrink-0">${formatFullTime(l.time)}</span>
-                                </div>
-                                <p class="text-[10px] font-bold text-slate-500 mt-0.5 truncate">${l.detail}</p>
-                                <p class="text-[8px] font-black text-slate-300 uppercase tracking-widest mt-1">${l.user}</p>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
+                ${yesterdayLogs.length > 0 ? `
+                    <div class="px-6 pt-6 pb-2 text-left">
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Yesterday</p>
+                    </div>
+                    <div class="px-6 text-left">
+                        ${yesterdayLogs.map(l => renderLog(l, false)).join('')}
+                    </div>
+                ` : ''}
 
-                <!-- Older -->
-                <div class="px-6 pt-6 pb-2 text-left">
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Older</p>
-                </div>
-                <div class="px-6 text-left">
-                    ${logs.filter(l => {
-                        const d = new Date(l.time);
-                        const yesterday = new Date(now);
-                        yesterday.setDate(yesterday.getDate() - 1);
-                        return d.toDateString() !== now.toDateString() && d.toDateString() !== yesterday.toDateString();
-                    }).map(l => `
-                        <div class="flex items-start gap-3 py-4 border-b border-slate-50 text-left">
-                            <div class="w-8 h-8 bg-${l.color}-50 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                                <span class="material-icons-outlined text-${l.color}-500 text-sm">${l.icon}</span>
-                            </div>
-                            <div class="flex-1 min-w-0 text-left">
-                                <div class="flex items-start justify-between gap-2 text-left">
-                                    <p class="text-[11px] font-black text-slate-900">${l.action}</p>
-                                    <span class="text-[8px] font-bold text-slate-400 whitespace-nowrap shrink-0">${formatTime(l.time)}</span>
-                                </div>
-                                <p class="text-[10px] font-bold text-slate-500 mt-0.5 truncate">${l.detail}</p>
-                                <p class="text-[8px] font-black text-slate-300 uppercase tracking-widest mt-1">${l.user} &middot; ${formatFullTime(l.time)}</p>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
+                ${olderLogs.length > 0 ? `
+                    <div class="px-6 pt-6 pb-2 text-left">
+                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Older</p>
+                    </div>
+                    <div class="px-6 text-left">
+                        ${olderLogs.map(l => renderLog(l, false)).join('')}
+                    </div>
+                ` : ''}
+
+                ${logs.length === 0 ? `
+                    <div class="p-6 text-center">
+                        <span class="material-icons-outlined text-slate-200 text-4xl mb-3">history</span>
+                        <p class="text-[10px] font-black text-slate-400">No activity recorded yet</p>
+                        <p class="text-[9px] font-bold text-slate-300 mt-1">Actions will appear here as you use the app</p>
+                    </div>
+                ` : ''}
 
                 <div class="p-6 text-center">
-                    <p class="text-[9px] font-bold text-slate-300">Showing last 7 days of activity</p>
+                    <p class="text-[9px] font-bold text-slate-300">Showing last ${logs.length} activit${logs.length === 1 ? 'y' : 'ies'}</p>
                 </div>
             </div>
         </div>

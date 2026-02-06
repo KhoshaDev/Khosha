@@ -28,7 +28,7 @@
   - Security (PIN, 2FA, session management, devices, login history)
   - Alerts (notification channels, inventory/sales/customer/repair alerts)
   - Taxes (GSTIN, PAN, tax rates by category, HSN codes, invoice config)
-  - Plugins (WhatsApp, Tally, Razorpay, PhonePe, SMS, printer, Sheets, Shiprocket)
+  - Plugins (24 plugins across 7 categories — payments, finance, telecom, brand, comms, accounting, hardware)
   - Teams (staff members, roles, module access matrix)
   - Logs (activity audit trail, grouped by day with filters)
   - Language (10 Indian languages, communication lang, date/currency/number formats)
@@ -36,6 +36,14 @@
   - Updates & Release Notes (version banner, release timeline, changelog)
   - Theme (light/dark/system mode, 8 accent colors, density, font size, sidebar, animations)
   - Help (WhatsApp/call/email/ticket support, guides, FAQ, account info, bug report)
+- [x] **Settings DB Persistence:** Connected all settings sub-apps to Turso DB with retailer_id isolation:
+  - Created 5 new tables: `retailer_settings`, `team_members`, `team_roles`, `retailer_plugins`, `activity_logs`
+  - Added 5 db helper modules: `db.settings`, `db.teamMembers`, `db.teamRoles`, `db.plugins`, `db.activityLogs`
+  - Added `window.saveSettings()` shared helper + sync integration
+  - Wired 6 JSON-category settings: security (4 fields), alerts (14 fields), taxes (23 fields), language (8 fields), backup (5 fields), theme (7 fields)
+  - Wired 3 relational pages: plugins (connect/disconnect with DB), teams (add/remove members from DB), logs (read from activity_logs table)
+  - Custom save functions for taxes (nested GST/HSN JSON) and theme (dual localStorage + DB write)
+  - All settings persist per retailer with zero-migration defaults strategy
 
 ---
 
@@ -70,14 +78,14 @@ _(none currently)_
 - [ ] Mark retailers as registered in external DB after onboarding
 - [ ] General UI/UX improvements
 - [ ] Performance optimization (code-splitting for 500KB+ bundle)
-- [ ] Add user/role management within each retailer (staff, manager, owner)
+- [ ] Add user/role management within each retailer (staff, manager, owner) — teams page DB wired, needs role editor UI
 
 ---
 
 ## Architecture Notes
 
 ### Multi-Tenant Design
-- **Tenant-scoped tables** (filtered by `retailer_id`): customers, companies, sales, groups, group_members, automations, automation_messages, communication_log, inquiries, repairs, inventory_logs
+- **Tenant-scoped tables** (filtered by `retailer_id`): customers, companies, sales, groups, group_members, automations, automation_messages, communication_log, inquiries, repairs, inventory_logs, retailer_settings, team_members, team_roles, retailer_plugins, activity_logs
 - **Global tables** (shared across all retailers): products, schemes, sale_items (inherits via sale_id join), retailers
 - **Tenant identity**: stored in `state.retailerId` + localStorage, used by all db helpers and sync
 - **Login**: authenticates by mobile number or store code against `retailers` table
@@ -92,4 +100,5 @@ _(none currently)_
 - `setup_db.js` — schema with `retailer_id` columns
 - `migrate_add_retailer_id.js` — live DB migration script (Phase 1)
 - `migrate_add_missing_tables.js` — adds inquiries, repairs, inventory_logs tables
+- `migrate_add_settings_tables.js` — adds retailer_settings, team_members, team_roles, retailer_plugins, activity_logs
 - `seed_demo_retailers.js` — demo data seeding

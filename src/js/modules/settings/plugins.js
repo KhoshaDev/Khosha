@@ -1,237 +1,108 @@
+import { db } from '../../utils/db.js';
+
 export function renderSettingsPlugins() {
+    const cache = window.getCache();
+    const dbPlugins = cache.retailerPlugins || [];
+
+    // Build a lookup map from DB: plugin_key → status
+    const dbStatus = {};
+    dbPlugins.forEach(p => { dbStatus[p.plugin_key] = p.status; });
+
     const categories = [
         {
             label: 'Payments & POS',
             plugins: [
-                {
-                    name: 'Pine Labs POS',
-                    desc: 'Accept card, UPI, wallet & EMI payments on Pine Labs terminals. Auto-push sale amount to device, capture transaction ID and settle instantly.',
-                    icon: 'point_of_sale',
-                    color: 'blue',
-                    status: 'connected',
-                    badge: 'Active'
-                },
-                {
-                    name: 'Razorpay Payments',
-                    desc: 'Accept UPI, cards, net banking & wallets online. Auto-reconcile payments with sales records.',
-                    icon: 'account_balance_wallet',
-                    color: 'indigo',
-                    status: 'available',
-                    badge: 'Connect'
-                },
-                {
-                    name: 'PhonePe POS',
-                    desc: 'QR-based payments at counter. Instant settlement and daily reconciliation reports.',
-                    icon: 'qr_code_scanner',
-                    color: 'purple',
-                    status: 'available',
-                    badge: 'Connect'
-                },
-                {
-                    name: 'Paytm for Business',
-                    desc: 'Accept Paytm wallet, UPI & Paytm Postpaid. Sound box alerts and auto-settlement.',
-                    icon: 'payments',
-                    color: 'blue',
-                    status: 'available',
-                    badge: 'Connect'
-                },
+                { name: 'Pine Labs POS', key: 'pine_labs_pos', desc: 'Accept card, UPI, wallet & EMI payments on Pine Labs terminals. Auto-push sale amount to device, capture transaction ID and settle instantly.', icon: 'point_of_sale', color: 'blue' },
+                { name: 'Razorpay Payments', key: 'razorpay', desc: 'Accept UPI, cards, net banking & wallets online. Auto-reconcile payments with sales records.', icon: 'account_balance_wallet', color: 'indigo' },
+                { name: 'PhonePe POS', key: 'phonepe_pos', desc: 'QR-based payments at counter. Instant settlement and daily reconciliation reports.', icon: 'qr_code_scanner', color: 'purple' },
+                { name: 'Paytm for Business', key: 'paytm_business', desc: 'Accept Paytm wallet, UPI & Paytm Postpaid. Sound box alerts and auto-settlement.', icon: 'payments', color: 'blue' },
             ]
         },
         {
             label: 'Consumer Finance & EMI',
             plugins: [
-                {
-                    name: 'Bajaj Finserv EMI',
-                    desc: 'Offer No-Cost EMI & low-cost EMI on Bajaj Finserv cards. Instant approval at checkout, auto-capture EMI tenure and subvention.',
-                    icon: 'credit_score',
-                    color: 'blue',
-                    status: 'connected',
-                    badge: 'Active'
-                },
-                {
-                    name: 'HDFC Consumer Finance',
-                    desc: 'Enable HDFC consumer durable loans at POS. Approve customers via Aadhar OTP, auto-link loan ID to sale invoice.',
-                    icon: 'account_balance',
-                    color: 'indigo',
-                    status: 'available',
-                    badge: 'Connect'
-                },
-                {
-                    name: 'IDFC First Finance',
-                    desc: 'Consumer durable loans with instant digital approval. Support for 3–24 month tenures on electronics & appliances.',
-                    icon: 'savings',
-                    color: 'purple',
-                    status: 'available',
-                    badge: 'Connect'
-                },
-                {
-                    name: 'Home Credit',
-                    desc: 'EMI for non-card customers. Aadhar-based approval in 5 minutes for smartphones, appliances & electronics.',
-                    icon: 'approval',
-                    color: 'amber',
-                    status: 'available',
-                    badge: 'Connect'
-                },
-                {
-                    name: 'ZestMoney / DMI Finance',
-                    desc: 'Buy Now Pay Later and no-cost EMI for online & in-store. Instant credit line for customers without credit cards.',
-                    icon: 'currency_rupee',
-                    color: 'green',
-                    status: 'available',
-                    badge: 'Connect'
-                },
+                { name: 'Bajaj Finserv EMI', key: 'bajaj_finserv_emi', desc: 'Offer No-Cost EMI & low-cost EMI on Bajaj Finserv cards. Instant approval at checkout, auto-capture EMI tenure and subvention.', icon: 'credit_score', color: 'blue' },
+                { name: 'HDFC Consumer Finance', key: 'hdfc_consumer_finance', desc: 'Enable HDFC consumer durable loans at POS. Approve customers via Aadhar OTP, auto-link loan ID to sale invoice.', icon: 'account_balance', color: 'indigo' },
+                { name: 'IDFC First Finance', key: 'idfc_first_finance', desc: 'Consumer durable loans with instant digital approval. Support for 3–24 month tenures on electronics & appliances.', icon: 'savings', color: 'purple' },
+                { name: 'Home Credit', key: 'home_credit', desc: 'EMI for non-card customers. Aadhar-based approval in 5 minutes for smartphones, appliances & electronics.', icon: 'approval', color: 'amber' },
+                { name: 'ZestMoney / DMI Finance', key: 'zestmoney_dmi', desc: 'Buy Now Pay Later and no-cost EMI for online & in-store. Instant credit line for customers without credit cards.', icon: 'currency_rupee', color: 'green' },
             ]
         },
         {
             label: 'Telecom & Recharge',
             plugins: [
-                {
-                    name: 'Jio Partner',
-                    desc: 'Activate Jio SIMs, process recharges & sell JioFiber plans from your store. Earn commission on every transaction.',
-                    icon: 'sim_card',
-                    color: 'blue',
-                    status: 'available',
-                    badge: 'Connect'
-                },
-                {
-                    name: 'Airtel Mitra',
-                    desc: 'Activate Airtel prepaid & postpaid connections, process recharges, sell Airtel Xstream & DTH plans.',
-                    icon: 'cell_tower',
-                    color: 'red',
-                    status: 'available',
-                    badge: 'Connect'
-                },
-                {
-                    name: 'Vi (Vodafone Idea)',
-                    desc: 'Process Vi recharges, new SIM activations & postpaid upgrades. Track commissions per transaction.',
-                    icon: 'signal_cellular_alt',
-                    color: 'rose',
-                    status: 'available',
-                    badge: 'Connect'
-                },
-                {
-                    name: 'BSNL Retailer',
-                    desc: 'BSNL SIM activations, recharges & broadband plan bookings. Government ID verification support.',
-                    icon: 'router',
-                    color: 'slate',
-                    status: 'available',
-                    badge: 'Connect'
-                },
-                {
-                    name: 'Multi-Recharge API',
-                    desc: 'Unified recharge API for all operators — prepaid, postpaid, DTH, broadband & electricity bills from one dashboard.',
-                    icon: 'bolt',
-                    color: 'amber',
-                    status: 'available',
-                    badge: 'Connect'
-                },
+                { name: 'Jio Partner', key: 'jio_partner', desc: 'Activate Jio SIMs, process recharges & sell JioFiber plans from your store. Earn commission on every transaction.', icon: 'sim_card', color: 'blue' },
+                { name: 'Airtel Mitra', key: 'airtel_mitra', desc: 'Activate Airtel prepaid & postpaid connections, process recharges, sell Airtel Xstream & DTH plans.', icon: 'cell_tower', color: 'red' },
+                { name: 'Vi (Vodafone Idea)', key: 'vi_vodafone', desc: 'Process Vi recharges, new SIM activations & postpaid upgrades. Track commissions per transaction.', icon: 'signal_cellular_alt', color: 'rose' },
+                { name: 'BSNL Retailer', key: 'bsnl_retailer', desc: 'BSNL SIM activations, recharges & broadband plan bookings. Government ID verification support.', icon: 'router', color: 'slate' },
+                { name: 'Multi-Recharge API', key: 'multi_recharge_api', desc: 'Unified recharge API for all operators — prepaid, postpaid, DTH, broadband & electricity bills from one dashboard.', icon: 'bolt', color: 'amber' },
             ]
         },
         {
             label: 'Brand & Warranty',
             plugins: [
-                {
-                    name: 'Samsung Partner Portal',
-                    desc: 'Sync Samsung product catalog, claim brand warranty registrations & submit display incentive claims.',
-                    icon: 'devices',
-                    color: 'blue',
-                    status: 'available',
-                    badge: 'Connect'
-                },
-                {
-                    name: 'Xiaomi Retail Suite',
-                    desc: 'Access Mi product feed, process Mi Extended Warranty activations & sync sell-out data for incentives.',
-                    icon: 'smartphone',
-                    color: 'orange',
-                    status: 'available',
-                    badge: 'Connect'
-                },
-                {
-                    name: 'OneAssist / Onsitego',
-                    desc: 'Sell extended warranty & damage protection plans at POS. Instant policy issuance linked to sale invoice.',
-                    icon: 'verified_user',
-                    color: 'green',
-                    status: 'available',
-                    badge: 'Connect'
-                },
+                { name: 'Samsung Partner Portal', key: 'samsung_partner', desc: 'Sync Samsung product catalog, claim brand warranty registrations & submit display incentive claims.', icon: 'devices', color: 'blue' },
+                { name: 'Xiaomi Retail Suite', key: 'xiaomi_retail', desc: 'Access Mi product feed, process Mi Extended Warranty activations & sync sell-out data for incentives.', icon: 'smartphone', color: 'orange' },
+                { name: 'OneAssist / Onsitego', key: 'oneassist_onsitego', desc: 'Sell extended warranty & damage protection plans at POS. Instant policy issuance linked to sale invoice.', icon: 'verified_user', color: 'green' },
             ]
         },
         {
             label: 'Communication',
             plugins: [
-                {
-                    name: 'WhatsApp Business',
-                    desc: 'Send automated messages, invoices & reminders to customers via WhatsApp Business API.',
-                    icon: 'chat',
-                    color: 'green',
-                    status: 'connected',
-                    badge: 'Active'
-                },
-                {
-                    name: 'MSG91 SMS',
-                    desc: 'Transactional SMS for OTPs, invoices, payment confirmations & promotional campaigns.',
-                    icon: 'sms',
-                    color: 'amber',
-                    status: 'available',
-                    badge: 'Connect'
-                },
+                { name: 'WhatsApp Business', key: 'whatsapp_business', desc: 'Send automated messages, invoices & reminders to customers via WhatsApp Business API.', icon: 'chat', color: 'green' },
+                { name: 'MSG91 SMS', key: 'msg91_sms', desc: 'Transactional SMS for OTPs, invoices, payment confirmations & promotional campaigns.', icon: 'sms', color: 'amber' },
             ]
         },
         {
             label: 'Accounting & ERP',
             plugins: [
-                {
-                    name: 'Tally Integration',
-                    desc: 'Auto-sync sales, expenses & GST data directly into Tally ERP for seamless accounting.',
-                    icon: 'calculate',
-                    color: 'blue',
-                    status: 'available',
-                    badge: 'Connect'
-                },
-                {
-                    name: 'Google Sheets',
-                    desc: 'Export daily sales, inventory & customer data to Google Sheets automatically.',
-                    icon: 'table_chart',
-                    color: 'green',
-                    status: 'available',
-                    badge: 'Connect'
-                },
+                { name: 'Tally Integration', key: 'tally', desc: 'Auto-sync sales, expenses & GST data directly into Tally ERP for seamless accounting.', icon: 'calculate', color: 'blue' },
+                { name: 'Google Sheets', key: 'google_sheets', desc: 'Export daily sales, inventory & customer data to Google Sheets automatically.', icon: 'table_chart', color: 'green' },
             ]
         },
         {
             label: 'Hardware & Logistics',
             plugins: [
-                {
-                    name: 'Thermal Printer',
-                    desc: 'Connect Bluetooth or USB receipt printers for instant POS invoice printing.',
-                    icon: 'print',
-                    color: 'slate',
-                    status: 'available',
-                    badge: 'Setup'
-                },
-                {
-                    name: 'Barcode Scanner',
-                    desc: 'Pair Bluetooth or USB barcode scanners. Auto-lookup products by EAN/UPC code during billing.',
-                    icon: 'qr_code',
-                    color: 'slate',
-                    status: 'available',
-                    badge: 'Setup'
-                },
-                {
-                    name: 'Shiprocket',
-                    desc: 'Ship products to customers with tracking. Auto-generate shipping labels from sales.',
-                    icon: 'local_shipping',
-                    color: 'orange',
-                    status: 'available',
-                    badge: 'Connect'
-                },
+                { name: 'Thermal Printer', key: 'thermal_printer', desc: 'Connect Bluetooth or USB receipt printers for instant POS invoice printing.', icon: 'print', color: 'slate' },
+                { name: 'Barcode Scanner', key: 'barcode_scanner', desc: 'Pair Bluetooth or USB barcode scanners. Auto-lookup products by EAN/UPC code during billing.', icon: 'qr_code', color: 'slate' },
+                { name: 'Shiprocket', key: 'shiprocket', desc: 'Ship products to customers with tracking. Auto-generate shipping labels from sales.', icon: 'local_shipping', color: 'orange' },
             ]
         },
     ];
 
+    // Overlay DB status on hardcoded catalog
+    categories.forEach(cat => {
+        cat.plugins.forEach(p => {
+            p.status = dbStatus[p.key] || 'available';
+        });
+    });
+
     const allPlugins = categories.flatMap(c => c.plugins);
     const connectedCount = allPlugins.filter(p => p.status === 'connected').length;
     const availableCount = allPlugins.filter(p => p.status === 'available').length;
+
+    // Connect/disconnect handler
+    window._togglePlugin = async function(pluginKey, pluginName, currentStatus) {
+        const newStatus = currentStatus === 'connected' ? 'available' : 'connected';
+        try {
+            await db.plugins.upsert(pluginKey, newStatus, null);
+            // Update cache
+            const existing = (window._db_cache.retailerPlugins || []).findIndex(p => p.plugin_key === pluginKey);
+            if (existing >= 0) {
+                window._db_cache.retailerPlugins[existing].status = newStatus;
+            } else {
+                window._db_cache.retailerPlugins.push({ plugin_key: pluginKey, status: newStatus });
+            }
+            const r = (() => { const c = window.getCache(); const rid = localStorage.getItem('retaileros_retailer_id'); return c.retailers?.find(x => x.id === rid) || {}; })();
+            db.activityLogs.add({ action: 'plugin', detail: `${newStatus === 'connected' ? 'Connected' : 'Disconnected'} ${pluginName}`, user_name: r.contact_person || 'Owner', icon: 'extension', color: newStatus === 'connected' ? 'green' : 'slate' });
+            if (window.toast) window.toast.success(newStatus === 'connected' ? `${pluginName} connected` : `${pluginName} disconnected`);
+            // Re-render
+            if (window.setSettingsView) window.setSettingsView('plugins');
+        } catch (err) {
+            console.error('Plugin toggle failed:', err);
+            if (window.toast) window.toast.error('Failed to update plugin');
+        }
+    };
 
     const renderPlugin = (p) => {
         const isConnected = p.status === 'connected';
@@ -248,14 +119,14 @@ export function renderSettingsPlugins() {
                         </div>
                     </div>
                     ${isConnected
-                        ? `<span class="shrink-0 ml-3 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-green-100 text-green-600">${p.badge}</span>`
-                        : `<button onclick="window.toast.info('Integration setup coming soon')" class="shrink-0 ml-3 text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-all">${p.badge}</button>`
+                        ? `<span class="shrink-0 ml-3 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-green-100 text-green-600">Active</span>`
+                        : `<button onclick="window._togglePlugin('${p.key}','${p.name.replace(/'/g, "\\'")}','available')" class="shrink-0 ml-3 text-[8px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-all">Connect</button>`
                     }
                 </div>
                 ${isConnected ? `
                     <div class="flex gap-2 mt-4 pl-16 text-left">
                         <button onclick="window.toast.info('Plugin settings coming soon')" class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-[8px] font-black text-slate-900 uppercase tracking-widest hover:bg-slate-50 transition-all">Configure</button>
-                        <button onclick="window.toast.info('Disconnected')" class="px-4 py-2 bg-white border border-red-200 rounded-lg text-[8px] font-black text-red-500 uppercase tracking-widest hover:bg-red-50 transition-all">Disconnect</button>
+                        <button onclick="window._togglePlugin('${p.key}','${p.name.replace(/'/g, "\\'")}','connected')" class="px-4 py-2 bg-white border border-red-200 rounded-lg text-[8px] font-black text-red-500 uppercase tracking-widest hover:bg-red-50 transition-all">Disconnect</button>
                     </div>
                 ` : ''}
             </div>

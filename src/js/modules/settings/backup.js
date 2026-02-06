@@ -11,8 +11,17 @@ export function renderSettingsBackup() {
     };
     const totalRecords = Object.values(stats).reduce((a, b) => a + b, 0);
 
+    const s = cache.retailerSettings?.backup || {};
+    const settings = {
+        auto_backup_enabled: s.auto_backup_enabled ?? true,
+        backup_frequency: s.backup_frequency ?? 'Weekly',
+        send_to_email: s.send_to_email ?? true,
+        retention_period: s.retention_period ?? '90 days',
+        export_format: s.export_format ?? 'CSV (Excel-compatible)',
+    };
+
     return `
-        <div class="h-full flex flex-col relative bg-white animate-slide-up text-left">
+        <div class="h-full flex flex-col relative bg-white animate-slide-up text-left" data-settings-category="backup">
             <header class="p-4 sm:p-8 pb-4 shrink-0 text-left">
                 <div class="flex items-center justify-between mb-2 text-left">
                     <button onclick="window.setSettingsView(null)" class="flex items-center gap-1 text-slate-400 hover:text-slate-900 transition-colors">
@@ -93,10 +102,10 @@ export function renderSettingsBackup() {
                         <div class="text-left">
                             <p class="text-xs font-black text-slate-900">Export Format</p>
                         </div>
-                        <select class="px-3 py-2 bg-slate-50 border-0 rounded-lg text-[10px] font-black text-slate-700 focus:outline-none">
-                            <option selected>CSV (Excel-compatible)</option>
-                            <option>JSON (Developer format)</option>
-                            <option>PDF Report</option>
+                        <select data-field="export_format" onchange="window.saveSettings('backup')" class="px-3 py-2 bg-slate-50 border-0 rounded-lg text-[10px] font-black text-slate-700 focus:outline-none">
+                            <option ${settings.export_format === 'CSV (Excel-compatible)' ? 'selected' : ''}>CSV (Excel-compatible)</option>
+                            <option ${settings.export_format === 'JSON (Developer format)' ? 'selected' : ''}>JSON (Developer format)</option>
+                            <option ${settings.export_format === 'PDF Report' ? 'selected' : ''}>PDF Report</option>
                         </select>
                     </div>
                     <button onclick="window.toast.info('Export started — download will begin shortly')" class="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
@@ -116,7 +125,7 @@ export function renderSettingsBackup() {
                                 <p class="text-[9px] font-bold text-slate-400">Automatically backup data on schedule</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer" checked>
+                                <input type="checkbox" class="sr-only peer" data-field="auto_backup_enabled" onchange="window.saveSettings('backup')" ${settings.auto_backup_enabled ? 'checked' : ''}>
                                 <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
@@ -125,10 +134,10 @@ export function renderSettingsBackup() {
                                 <p class="text-xs font-black text-slate-900">Frequency</p>
                                 <p class="text-[9px] font-bold text-slate-400">How often to run auto-backup</p>
                             </div>
-                            <select class="px-3 py-2 bg-slate-50 border-0 rounded-lg text-[10px] font-black text-slate-700 focus:outline-none">
-                                <option>Daily</option>
-                                <option selected>Weekly</option>
-                                <option>Monthly</option>
+                            <select data-field="backup_frequency" onchange="window.saveSettings('backup')" class="px-3 py-2 bg-slate-50 border-0 rounded-lg text-[10px] font-black text-slate-700 focus:outline-none">
+                                <option ${settings.backup_frequency === 'Daily' ? 'selected' : ''}>Daily</option>
+                                <option ${settings.backup_frequency === 'Weekly' ? 'selected' : ''}>Weekly</option>
+                                <option ${settings.backup_frequency === 'Monthly' ? 'selected' : ''}>Monthly</option>
                             </select>
                         </div>
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -137,7 +146,7 @@ export function renderSettingsBackup() {
                                 <p class="text-[9px] font-bold text-slate-400">Email backup file to store owner</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer" checked>
+                                <input type="checkbox" class="sr-only peer" data-field="send_to_email" onchange="window.saveSettings('backup')" ${settings.send_to_email ? 'checked' : ''}>
                                 <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
@@ -179,11 +188,11 @@ export function renderSettingsBackup() {
                             <p class="text-xs font-black text-slate-900">Keep Backup History</p>
                             <p class="text-[9px] font-bold text-slate-400">Auto-delete old backups after period</p>
                         </div>
-                        <select class="px-3 py-2 bg-slate-50 border-0 rounded-lg text-[10px] font-black text-slate-700 focus:outline-none">
-                            <option>30 days</option>
-                            <option selected>90 days</option>
-                            <option>1 year</option>
-                            <option>Forever</option>
+                        <select data-field="retention_period" onchange="window.saveSettings('backup')" class="px-3 py-2 bg-slate-50 border-0 rounded-lg text-[10px] font-black text-slate-700 focus:outline-none">
+                            <option ${settings.retention_period === '30 days' ? 'selected' : ''}>30 days</option>
+                            <option ${settings.retention_period === '90 days' ? 'selected' : ''}>90 days</option>
+                            <option ${settings.retention_period === '1 year' ? 'selected' : ''}>1 year</option>
+                            <option ${settings.retention_period === 'Forever' ? 'selected' : ''}>Forever</option>
                         </select>
                     </div>
                     <div class="card p-4 bg-red-50 border-red-100 text-left">

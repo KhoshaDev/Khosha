@@ -1,7 +1,17 @@
+import { db } from '../../utils/db.js';
+
 export function renderSettingsTheme() {
-    const currentTheme = localStorage.getItem('retaileros_theme') || 'light';
-    const currentAccent = localStorage.getItem('retaileros_accent') || 'slate';
-    const currentDensity = localStorage.getItem('retaileros_density') || 'comfortable';
+    const cache = window.getCache();
+    const s = cache.retailerSettings?.theme || {};
+    const settings = {
+        display_mode: s.display_mode ?? localStorage.getItem('retaileros_theme') ?? 'light',
+        accent_color: s.accent_color ?? localStorage.getItem('retaileros_accent') ?? 'slate',
+        layout_density: s.layout_density ?? localStorage.getItem('retaileros_density') ?? 'comfortable',
+        font_size: s.font_size ?? 100,
+        sidebar_collapsed: s.sidebar_collapsed ?? false,
+        show_app_labels: s.show_app_labels ?? true,
+        animations_enabled: s.animations_enabled ?? true,
+    };
 
     const accents = [
         { name: 'Slate', key: 'slate', bg: 'bg-slate-900', ring: 'ring-slate-900' },
@@ -14,8 +24,69 @@ export function renderSettingsTheme() {
         { name: 'Teal', key: 'teal', bg: 'bg-teal-600', ring: 'ring-teal-600' },
     ];
 
+    // Custom save for theme — dual writes to localStorage + DB
+    window.saveThemeSettings = async function() {
+        const container = document.querySelector('[data-settings-category="theme"]');
+        if (!container) return;
+
+        const data = {};
+        // Collect hidden inputs for button-group values
+        container.querySelectorAll('input[type="hidden"][data-field], input[type="text"][data-field]').forEach(el => {
+            data[el.dataset.field] = el.value;
+        });
+        // Collect range
+        container.querySelectorAll('input[type="range"][data-field]').forEach(el => {
+            data[el.dataset.field] = Number(el.value);
+        });
+        // Collect checkboxes
+        container.querySelectorAll('input[type="checkbox"][data-field]').forEach(el => {
+            data[el.dataset.field] = el.checked;
+        });
+
+        // Write to localStorage for instant access
+        if (data.display_mode) localStorage.setItem('retaileros_theme', data.display_mode);
+        if (data.accent_color) localStorage.setItem('retaileros_accent', data.accent_color);
+        if (data.layout_density) localStorage.setItem('retaileros_density', data.layout_density);
+
+        // Write to DB for cross-device sync
+        try {
+            await db.settings.save('theme', data);
+            if (!window._db_cache.retailerSettings) window._db_cache.retailerSettings = {};
+            window._db_cache.retailerSettings.theme = data;
+            if (window.toast) window.toast.success('Theme saved');
+        } catch (err) {
+            console.error('Failed to save theme:', err);
+            if (window.toast) window.toast.error('Failed to save theme');
+        }
+    };
+
+    // Helper for button-group selection
+    window._selectThemeOption = function(field, value) {
+        const input = document.querySelector(`[data-field="${field}"]`);
+        if (input) input.value = value;
+        // Update visual state
+        const group = input?.closest('.grid, .space-y-3');
+        if (group) {
+            group.querySelectorAll('[data-option-btn]').forEach(btn => {
+                const isActive = btn.dataset.optionValue === value;
+                if (field === 'accent_color') {
+                    // Accent buttons have different styling
+                    btn.className = btn.className.replace(/bg-slate-50 ring-2 ring-\w+-\d+/g, '').replace('hover:bg-slate-50', '');
+                    if (isActive) btn.classList.add('bg-slate-50');
+                    else btn.classList.add('hover:bg-slate-50');
+                } else {
+                    btn.classList.toggle('border-slate-900', isActive);
+                    btn.classList.toggle('bg-slate-50', isActive);
+                    btn.classList.toggle('ring-1', isActive);
+                    btn.classList.toggle('ring-slate-900', isActive);
+                    btn.classList.toggle('hover:border-slate-300', !isActive);
+                }
+            });
+        }
+    };
+
     return `
-        <div class="h-full flex flex-col relative bg-white animate-slide-up text-left">
+        <div data-settings-category="theme" class="h-full flex flex-col relative bg-white animate-slide-up text-left">
             <header class="p-4 sm:p-8 pb-4 shrink-0 text-left">
                 <div class="flex items-center justify-between mb-2 text-left">
                     <button onclick="window.setSettingsView(null)" class="flex items-center gap-1 text-slate-400 hover:text-slate-900 transition-colors">
@@ -31,6 +102,10 @@ export function renderSettingsTheme() {
             </header>
 
             <div class="flex-1 overflow-y-auto custom-scrollbar text-left">
+                <input type="hidden" data-field="display_mode" value="${settings.display_mode}">
+                <input type="hidden" data-field="accent_color" value="${settings.accent_color}">
+                <input type="hidden" data-field="layout_density" value="${settings.layout_density}">
+
                 <!-- Mode -->
                 <div class="p-6 space-y-4 border-b border-dashed border-slate-200 text-left">
                     <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 text-left">
@@ -42,8 +117,8 @@ export function renderSettingsTheme() {
                             { name: 'Dark', key: 'dark', icon: 'dark_mode', desc: 'Easy on the eyes' },
                             { name: 'System', key: 'system', icon: 'settings_brightness', desc: 'Match device setting' },
                         ].map(t => `
-                            <button class="card p-4 text-center transition-all ${currentTheme === t.key ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900' : 'hover:border-slate-300'}">
-                                <span class="material-icons-outlined text-2xl ${currentTheme === t.key ? 'text-slate-900' : 'text-slate-400'} mb-2">${t.icon}</span>
+                            <button data-option-btn data-option-value="${t.key}" onclick="window._selectThemeOption('display_mode','${t.key}')" class="card p-4 text-center transition-all ${settings.display_mode === t.key ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900' : 'hover:border-slate-300'}">
+                                <span class="material-icons-outlined text-2xl ${settings.display_mode === t.key ? 'text-slate-900' : 'text-slate-400'} mb-2">${t.icon}</span>
                                 <p class="text-[10px] font-black text-slate-900">${t.name}</p>
                                 <p class="text-[8px] font-bold text-slate-400 mt-0.5">${t.desc}</p>
                             </button>
@@ -58,8 +133,8 @@ export function renderSettingsTheme() {
                     </p>
                     <div class="grid grid-cols-4 gap-3 text-left">
                         ${accents.map(a => `
-                            <button class="flex flex-col items-center gap-2 p-3 rounded-xl transition-all ${currentAccent === a.key ? 'bg-slate-50 ring-2 ' + a.ring : 'hover:bg-slate-50'}">
-                                <div class="w-8 h-8 ${a.bg} rounded-full ${currentAccent === a.key ? 'ring-2 ring-offset-2 ' + a.ring : ''}"></div>
+                            <button data-option-btn data-option-value="${a.key}" onclick="window._selectThemeOption('accent_color','${a.key}')" class="flex flex-col items-center gap-2 p-3 rounded-xl transition-all ${settings.accent_color === a.key ? 'bg-slate-50 ring-2 ' + a.ring : 'hover:bg-slate-50'}">
+                                <div class="w-8 h-8 ${a.bg} rounded-full ${settings.accent_color === a.key ? 'ring-2 ring-offset-2 ' + a.ring : ''}"></div>
                                 <span class="text-[8px] font-black text-slate-600 uppercase tracking-widest">${a.name}</span>
                             </button>
                         `).join('')}
@@ -77,7 +152,7 @@ export function renderSettingsTheme() {
                             { name: 'Comfortable', key: 'comfortable', desc: 'Balanced spacing for readability. Default experience.', icon: 'density_medium' },
                             { name: 'Spacious', key: 'spacious', desc: 'Extra breathing room. Best for touch devices.', icon: 'density_large' },
                         ].map(d => `
-                            <button class="card p-4 flex items-center gap-4 text-left w-full transition-all ${currentDensity === d.key ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900' : 'hover:border-slate-300'}">
+                            <button data-option-btn data-option-value="${d.key}" onclick="window._selectThemeOption('layout_density','${d.key}')" class="card p-4 flex items-center gap-4 text-left w-full transition-all ${settings.layout_density === d.key ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900' : 'hover:border-slate-300'}">
                                 <div class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center">
                                     <span class="material-icons-outlined text-slate-500">${d.icon}</span>
                                 </div>
@@ -85,7 +160,7 @@ export function renderSettingsTheme() {
                                     <p class="text-xs font-black text-slate-900">${d.name}</p>
                                     <p class="text-[9px] font-bold text-slate-400">${d.desc}</p>
                                 </div>
-                                ${currentDensity === d.key ? '<span class="material-icons-outlined text-slate-900 text-sm ml-auto">check_circle</span>' : ''}
+                                ${settings.layout_density === d.key ? '<span class="material-icons-outlined text-slate-900 text-sm ml-auto">check_circle</span>' : ''}
                             </button>
                         `).join('')}
                     </div>
@@ -101,8 +176,8 @@ export function renderSettingsTheme() {
                             <span class="text-xs font-bold text-slate-400">A</span>
                             <span class="text-xl font-bold text-slate-400">A</span>
                         </div>
-                        <input type="range" min="80" max="120" value="100" class="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-slate-900">
-                        <p class="text-[9px] font-bold text-slate-400 text-center mt-2">100% (Default)</p>
+                        <input type="range" data-field="font_size" min="80" max="120" value="${settings.font_size}" class="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-slate-900">
+                        <p class="text-[9px] font-bold text-slate-400 text-center mt-2">${settings.font_size}% ${settings.font_size === 100 ? '(Default)' : ''}</p>
                     </div>
                 </div>
 
@@ -118,7 +193,7 @@ export function renderSettingsTheme() {
                                 <p class="text-[9px] font-bold text-slate-400">Start with minimized sidebar</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer">
+                                <input type="checkbox" data-field="sidebar_collapsed" class="sr-only peer" ${settings.sidebar_collapsed ? 'checked' : ''}>
                                 <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
@@ -128,7 +203,7 @@ export function renderSettingsTheme() {
                                 <p class="text-[9px] font-bold text-slate-400">Display text labels under sidebar icons</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer" checked>
+                                <input type="checkbox" data-field="show_app_labels" class="sr-only peer" ${settings.show_app_labels ? 'checked' : ''}>
                                 <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
@@ -146,14 +221,14 @@ export function renderSettingsTheme() {
                             <p class="text-[9px] font-bold text-slate-400">Enable slide & fade transitions</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" class="sr-only peer" checked>
+                            <input type="checkbox" data-field="animations_enabled" class="sr-only peer" ${settings.animations_enabled ? 'checked' : ''}>
                             <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                         </label>
                     </div>
                 </div>
 
                 <div class="p-6 pt-0 text-left">
-                    <button onclick="window.toast.info('Theme preferences saved')" class="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                    <button onclick="window.saveThemeSettings()" class="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
                         Apply Theme
                     </button>
                 </div>

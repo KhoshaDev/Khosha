@@ -22,7 +22,7 @@ export async function syncData() {
 
         // Fetch All Application Data in Parallel
         // Every query has .catch() so one failure doesn't break the entire sync
-        const [customers, products, sales, saleItems, companies, groups, groupMembers, automations, automationMessages, communications, schemes, retailers, inquiries, repairs, inventoryLogs] = await Promise.all([
+        const [customers, products, sales, saleItems, companies, groups, groupMembers, automations, automationMessages, communications, schemes, retailers, inquiries, repairs, inventoryLogs, retailerSettingsRaw, teamMembers, teamRoles, retailerPlugins, activityLogs] = await Promise.all([
             // TENANT-SCOPED tables
             tenantQuery("customers").catch(e => { console.error("Sync customers failed:", e); return []; }),
             // GLOBAL tables (no tenant filter)
@@ -45,8 +45,21 @@ export async function syncData() {
             // TENANT-SCOPED: inquiries, repairs, inventory_logs
             tenantQuery("inquiries", "created_at DESC").catch(e => { console.error("Sync inquiries failed:", e); return []; }),
             tenantQuery("repairs", "created_at DESC").catch(e => { console.error("Sync repairs failed:", e); return []; }),
-            tenantQuery("inventory_logs", "date DESC").catch(e => { console.error("Sync inventory_logs failed:", e); return []; })
+            tenantQuery("inventory_logs", "date DESC").catch(e => { console.error("Sync inventory_logs failed:", e); return []; }),
+            // TENANT-SCOPED: settings tables
+            tenantQuery("retailer_settings").catch(e => { console.error("Sync retailer_settings failed:", e); return []; }),
+            tenantQuery("team_members", "created_at").catch(e => { console.error("Sync team_members failed:", e); return []; }),
+            tenantQuery("team_roles", "created_at").catch(e => { console.error("Sync team_roles failed:", e); return []; }),
+            tenantQuery("retailer_plugins").catch(e => { console.error("Sync retailer_plugins failed:", e); return []; }),
+            tenantQuery("activity_logs", "created_at DESC").catch(e => { console.error("Sync activity_logs failed:", e); return []; })
         ]);
+
+        // Transform retailer_settings rows into a category-keyed map
+        const retailerSettings = {};
+        (retailerSettingsRaw || []).forEach(row => {
+            try { retailerSettings[row.category] = JSON.parse(row.settings); }
+            catch(e) { retailerSettings[row.category] = {}; }
+        });
 
         // Map to global window storage
         window._db_cache = {
@@ -66,6 +79,12 @@ export async function syncData() {
             inquiries: inquiries || [],
             repairs: repairs || [],
             inventoryLogs: inventoryLogs || [],
+            // Settings tables
+            retailerSettings,
+            teamMembers: teamMembers || [],
+            teamRoles: teamRoles || [],
+            retailerPlugins: retailerPlugins || [],
+            activityLogs: activityLogs || [],
             marketplace: [],
             campaigns: [],
             bookings: []
@@ -93,5 +112,6 @@ window.getCache = () => window._db_cache || {
     customers: [], sales: [], products: [], saleItems: [], companies: [],
     groups: [], groupMembers: [], automations: [], automationMessages: [],
     communications: [], schemes: [], retailers: [], inventoryLogs: [], inquiries: [],
-    repairs: [], marketplace: [], campaigns: [], bookings: []
+    repairs: [], retailerSettings: {}, teamMembers: [], teamRoles: [],
+    retailerPlugins: [], activityLogs: [], marketplace: [], campaigns: [], bookings: []
 };

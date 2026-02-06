@@ -412,6 +412,127 @@ export const db = {
             );
         }
     },
+    // ── Settings (JSON per category) ──────────────────────────
+    settings: {
+        getAll: () => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT category, settings FROM retailer_settings WHERE retailer_id = ?", [rid])
+                : Promise.resolve([]);
+        },
+        get: (category) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT settings FROM retailer_settings WHERE retailer_id = ? AND category = ?", [rid, category])
+                : Promise.resolve([]);
+        },
+        save: (category, settingsObj) => {
+            const rid = getCurrentRetailerId();
+            if (!rid) return Promise.resolve();
+            const id = `setting_${rid}_${category}`;
+            return query(
+                `INSERT OR REPLACE INTO retailer_settings (id, retailer_id, category, settings, updated_at) VALUES (?, ?, ?, ?, ?)`,
+                [id, rid, category, JSON.stringify(settingsObj), new Date().toISOString()]
+            );
+        }
+    },
+    // ── Team Members ────────────────────────────────────────
+    teamMembers: {
+        getAll: () => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM team_members WHERE retailer_id = ? ORDER BY created_at", [rid])
+                : query("SELECT * FROM team_members ORDER BY created_at");
+        },
+        add: (m) => {
+            const rid = getCurrentRetailerId();
+            const now = new Date().toISOString();
+            return query(
+                "INSERT INTO team_members (id, retailer_id, name, role, phone, email, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [m.id, rid, m.name, m.role, m.phone || null, m.email || null, m.status || 'invited', now, now]
+            );
+        },
+        update: (id, updates) => {
+            const rid = getCurrentRetailerId();
+            return query(
+                "UPDATE team_members SET name = ?, role = ?, phone = ?, status = ?, updated_at = ? WHERE id = ? AND retailer_id = ?",
+                [updates.name, updates.role, updates.phone, updates.status, new Date().toISOString(), id, rid]
+            );
+        },
+        delete: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("DELETE FROM team_members WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("DELETE FROM team_members WHERE id = ?", [id]);
+        }
+    },
+    // ── Team Roles ──────────────────────────────────────────
+    teamRoles: {
+        getAll: () => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM team_roles WHERE retailer_id = ? ORDER BY created_at", [rid])
+                : query("SELECT * FROM team_roles ORDER BY created_at");
+        },
+        add: (r) => {
+            const rid = getCurrentRetailerId();
+            const now = new Date().toISOString();
+            return query(
+                "INSERT INTO team_roles (id, retailer_id, name, permissions, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [r.id, rid, r.name, JSON.stringify(r.permissions), r.description || null, now, now]
+            );
+        },
+        update: (id, updates) => {
+            const rid = getCurrentRetailerId();
+            return query(
+                "UPDATE team_roles SET name = ?, permissions = ?, description = ?, updated_at = ? WHERE id = ? AND retailer_id = ?",
+                [updates.name, JSON.stringify(updates.permissions), updates.description, new Date().toISOString(), id, rid]
+            );
+        },
+        delete: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("DELETE FROM team_roles WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("DELETE FROM team_roles WHERE id = ?", [id]);
+        }
+    },
+    // ── Retailer Plugins ────────────────────────────────────
+    plugins: {
+        getAll: () => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM retailer_plugins WHERE retailer_id = ?", [rid])
+                : Promise.resolve([]);
+        },
+        upsert: (pluginKey, status, config) => {
+            const rid = getCurrentRetailerId();
+            if (!rid) return Promise.resolve();
+            const id = `plugin_${rid}_${pluginKey}`;
+            const now = new Date().toISOString();
+            const connectedAt = status === 'connected' ? now : null;
+            return query(
+                `INSERT OR REPLACE INTO retailer_plugins (id, retailer_id, plugin_key, status, config, connected_at, updated_at) VALUES (?, ?, ?, ?, ?, COALESCE((SELECT connected_at FROM retailer_plugins WHERE id = ?), ?), ?)`,
+                [id, rid, pluginKey, status, config ? JSON.stringify(config) : null, id, connectedAt, now]
+            );
+        }
+    },
+    // ── Activity Logs ───────────────────────────────────────
+    activityLogs: {
+        getAll: (limit = 50) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM activity_logs WHERE retailer_id = ? ORDER BY created_at DESC LIMIT ?", [rid, limit])
+                : query("SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT ?", [limit]);
+        },
+        add: (log) => {
+            const rid = getCurrentRetailerId();
+            const id = log.id || `log_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+            return query(
+                "INSERT INTO activity_logs (id, retailer_id, action, detail, user_name, icon, color, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [id, rid, log.action, log.detail || null, log.user_name || null, log.icon || null, log.color || null, new Date().toISOString()]
+            );
+        }
+    },
     approved: {
         // Check if mobile number is approved
         checkApproval: async (mobileNumber) => {
@@ -546,5 +667,45 @@ export const db = {
             const result = await client.execute(sql);
             return result.rows;
         }
+    }
+};
+
+// ── Shared Settings Save Helper ─────────────────────────────
+// Collects all data-field inputs from a settings page and saves to DB
+window.saveSettings = async function(category) {
+    const container = document.querySelector(`[data-settings-category="${category}"]`);
+    if (!container) { console.error('No settings container for', category); return; }
+
+    const data = {};
+    // Collect checkboxes
+    container.querySelectorAll('input[type="checkbox"][data-field]').forEach(el => {
+        data[el.dataset.field] = el.checked;
+    });
+    // Collect selects
+    container.querySelectorAll('select[data-field]').forEach(el => {
+        data[el.dataset.field] = el.value;
+    });
+    // Collect text/number inputs
+    container.querySelectorAll('input[type="text"][data-field], input[type="range"][data-field], input[type="number"][data-field]').forEach(el => {
+        data[el.dataset.field] = el.type === 'range' || el.type === 'number' ? Number(el.value) : el.value;
+    });
+    // Collect radio-like button groups (data-field on parent, data-value on active)
+    container.querySelectorAll('[data-field-group]').forEach(group => {
+        const active = group.querySelector('[data-active="true"]');
+        if (active) data[group.dataset.fieldGroup] = active.dataset.value;
+    });
+
+    try {
+        await db.settings.save(category, data);
+        // Update local cache immediately
+        if (!window._db_cache.retailerSettings) window._db_cache.retailerSettings = {};
+        window._db_cache.retailerSettings[category] = data;
+        // Log the activity
+        const retailer = (() => { const c = window.getCache(); const rid = localStorage.getItem('retaileros_retailer_id'); return c.retailers?.find(r => r.id === rid) || {}; })();
+        db.activityLogs.add({ action: 'settings', detail: `Updated ${category} settings`, user_name: retailer.contact_person || 'Owner', icon: 'settings', color: 'slate' });
+        if (window.toast) window.toast.success('Settings saved');
+    } catch (err) {
+        console.error('Failed to save settings:', err);
+        if (window.toast) window.toast.error('Failed to save settings');
     }
 };

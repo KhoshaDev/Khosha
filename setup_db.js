@@ -265,6 +265,81 @@ async function main() {
         `);
         await client.execute(`CREATE INDEX IF NOT EXISTS idx_inventory_logs_retailer ON inventory_logs(retailer_id)`);
 
+        // Retailer Settings (JSON per category — security, alerts, taxes, language, backup, theme)
+        await client.execute(`
+            CREATE TABLE retailer_settings (
+                id TEXT PRIMARY KEY,
+                retailer_id TEXT NOT NULL,
+                category TEXT NOT NULL,
+                settings TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE(retailer_id, category)
+            )
+        `);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_retailer_settings_rid ON retailer_settings(retailer_id)`);
+
+        // Team Members
+        await client.execute(`
+            CREATE TABLE team_members (
+                id TEXT PRIMARY KEY,
+                retailer_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                role TEXT NOT NULL,
+                phone TEXT,
+                email TEXT,
+                status TEXT DEFAULT 'invited',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        `);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_team_members_rid ON team_members(retailer_id)`);
+
+        // Team Roles
+        await client.execute(`
+            CREATE TABLE team_roles (
+                id TEXT PRIMARY KEY,
+                retailer_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                permissions TEXT NOT NULL,
+                description TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE(retailer_id, name)
+            )
+        `);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_team_roles_rid ON team_roles(retailer_id)`);
+
+        // Retailer Plugins
+        await client.execute(`
+            CREATE TABLE retailer_plugins (
+                id TEXT PRIMARY KEY,
+                retailer_id TEXT NOT NULL,
+                plugin_key TEXT NOT NULL,
+                status TEXT DEFAULT 'available',
+                config TEXT,
+                connected_at TEXT,
+                updated_at TEXT NOT NULL,
+                UNIQUE(retailer_id, plugin_key)
+            )
+        `);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_retailer_plugins_rid ON retailer_plugins(retailer_id)`);
+
+        // Activity Logs
+        await client.execute(`
+            CREATE TABLE activity_logs (
+                id TEXT PRIMARY KEY,
+                retailer_id TEXT NOT NULL,
+                action TEXT NOT NULL,
+                detail TEXT,
+                user_name TEXT,
+                icon TEXT,
+                color TEXT,
+                created_at TEXT NOT NULL
+            )
+        `);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_activity_logs_rid ON activity_logs(retailer_id)`);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_activity_logs_created ON activity_logs(retailer_id, created_at)`);
+
         // Retailers (Onboarded retailers from external approved database)
         await client.execute(`
             CREATE TABLE retailers (

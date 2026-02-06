@@ -5,8 +5,19 @@ export function renderSettingsSecurity() {
         return cache.retailers?.find(r => r.id === rid) || {};
     })();
 
+    const cache = window.getCache();
+    const s = cache.retailerSettings?.security || {};
+    const settings = {
+        otp_on_login: s.otp_on_login ?? true,
+        email_verification: s.email_verification ?? false,
+        auto_logout_timer: s.auto_logout_timer ?? '30 min',
+        remember_device: s.remember_device ?? true,
+    };
+
+    const timerOptions = ['15 min', '30 min', '1 hour', '4 hours', 'Never'];
+
     return `
-        <div class="h-full flex flex-col relative bg-white animate-slide-up text-left">
+        <div data-settings-category="security" class="h-full flex flex-col relative bg-white animate-slide-up text-left">
             <header class="p-4 sm:p-8 pb-4 shrink-0 text-left">
                 <div class="flex items-center justify-between mb-2 text-left">
                     <button onclick="window.setSettingsView(null)" class="flex items-center gap-1 text-slate-400 hover:text-slate-900 transition-colors">
@@ -58,7 +69,7 @@ export function renderSettingsSecurity() {
                                 </div>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer" checked>
+                                <input type="checkbox" data-field="otp_on_login" class="sr-only peer" ${settings.otp_on_login ? 'checked' : ''}>
                                 <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full peer-focus:ring-2 peer-focus:ring-slate-300 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
@@ -73,7 +84,7 @@ export function renderSettingsSecurity() {
                                 </div>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer">
+                                <input type="checkbox" data-field="email_verification" class="sr-only peer" ${settings.email_verification ? 'checked' : ''}>
                                 <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full peer-focus:ring-2 peer-focus:ring-slate-300 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
@@ -91,12 +102,8 @@ export function renderSettingsSecurity() {
                                 <p class="text-xs font-black text-slate-900">Auto-Logout Timer</p>
                                 <p class="text-[9px] font-bold text-slate-400">Automatically logout after inactivity</p>
                             </div>
-                            <select class="px-3 py-2 bg-slate-50 border-0 rounded-lg text-[10px] font-black text-slate-900 focus:outline-none">
-                                <option>15 min</option>
-                                <option selected>30 min</option>
-                                <option>1 hour</option>
-                                <option>4 hours</option>
-                                <option>Never</option>
+                            <select data-field="auto_logout_timer" class="px-3 py-2 bg-slate-50 border-0 rounded-lg text-[10px] font-black text-slate-900 focus:outline-none">
+                                ${timerOptions.map(o => `<option ${settings.auto_logout_timer === o ? 'selected' : ''}>${o}</option>`).join('')}
                             </select>
                         </div>
                         <div class="card p-4 flex items-center justify-between text-left">
@@ -105,7 +112,7 @@ export function renderSettingsSecurity() {
                                 <p class="text-[9px] font-bold text-slate-400">Skip 2FA on trusted devices</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer" checked>
+                                <input type="checkbox" data-field="remember_device" class="sr-only peer" ${settings.remember_device ? 'checked' : ''}>
                                 <div class="w-9 h-5 bg-slate-200 peer-checked:bg-slate-900 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
                             </label>
                         </div>
@@ -169,7 +176,7 @@ export function renderSettingsSecurity() {
                 </div>
 
                 <div class="p-6 pt-0 text-left">
-                    <button onclick="window.toast.info('Settings saved')" class="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                    <button onclick="window.saveSettings('security')" class="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
                         Save Security Settings
                     </button>
                 </div>
