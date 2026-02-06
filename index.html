@@ -13,17 +13,8 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet" />
-
-
     <script>
         tailwindcss = { config: { theme: { extend: { colors: {
-            white: 'rgb(var(--color-bg-primary) / <alpha-value>)',
             slate: {
                 50:  'rgb(var(--color-bg-secondary) / <alpha-value>)',
                 100: 'rgb(var(--color-bg-tertiary) / <alpha-value>)',
@@ -39,6 +30,12 @@
             }
         }}}}};
     </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
     <style type="text/tailwindcss">
         @layer base {
             :root {
@@ -61,6 +58,8 @@
                 --font-scale: 1;
             }
             html.dark {
+                --primary: #f1f5f9;
+                --bg-light: #1e293b;
                 --color-bg-primary: 15 23 42;
                 --color-bg-secondary: 30 41 59;
                 --color-bg-tertiary: 51 65 85;
@@ -75,6 +74,21 @@
                 --dot-color: #334155;
                 --scrollbar-color: #334155;
                 --body-bg: #0f172a;
+            }
+            /* Dark mode: flip bg-white to dark (but NOT text-white, border-white, after:bg-white, or bg-white/opacity) */
+            html.dark .bg-white {
+                background-color: rgb(var(--color-bg-primary)) !important;
+            }
+            /* Dark mode: toggle switch knob contrast fix — checked track is light, knob must be dark */
+            html.dark .peer:checked ~ div::after {
+                background-color: rgb(30 41 59) !important;
+            }
+            /* Dark mode: range input slider */
+            html.dark input[type="range"]::-webkit-slider-thumb {
+                background-color: #f1f5f9;
+            }
+            html.dark input[type="range"] {
+                accent-color: #f1f5f9;
             }
             html, body {
                 width: 100%;
