@@ -22,7 +22,7 @@ export async function syncData() {
 
         // Fetch All Application Data in Parallel
         // Every query has .catch() so one failure doesn't break the entire sync
-        const [customers, products, sales, saleItems, companies, groups, groupMembers, automations, automationMessages, communications, schemes, retailers, inquiries, repairs, inventoryLogs, retailerSettingsRaw, teamMembers, teamRoles, retailerPlugins, activityLogs] = await Promise.all([
+        const [customers, products, sales, saleItems, companies, groups, groupMembers, automations, automationMessages, communications, schemes, retailers, inquiries, repairs, inventoryLogs, retailerSettingsRaw, teamMembers, teamRoles, retailerPlugins, activityLogs, storeListings, storeOrders, storeOrderItems] = await Promise.all([
             // TENANT-SCOPED tables
             tenantQuery("customers").catch(e => { console.error("Sync customers failed:", e); return []; }),
             // GLOBAL tables (no tenant filter)
@@ -51,7 +51,14 @@ export async function syncData() {
             tenantQuery("team_members", "created_at").catch(e => { console.error("Sync team_members failed:", e); return []; }),
             tenantQuery("team_roles", "created_at").catch(e => { console.error("Sync team_roles failed:", e); return []; }),
             tenantQuery("retailer_plugins").catch(e => { console.error("Sync retailer_plugins failed:", e); return []; }),
-            tenantQuery("activity_logs", "created_at DESC").catch(e => { console.error("Sync activity_logs failed:", e); return []; })
+            tenantQuery("activity_logs", "created_at DESC").catch(e => { console.error("Sync activity_logs failed:", e); return []; }),
+            // TENANT-SCOPED: store tables
+            tenantQuery("store_listings", "created_at DESC").catch(e => { console.error("Sync store_listings failed:", e); return []; }),
+            tenantQuery("store_orders", "order_date DESC").catch(e => { console.error("Sync store_orders failed:", e); return []; }),
+            (retailerId
+                ? query("SELECT soi.* FROM store_order_items soi INNER JOIN store_orders so ON soi.order_id = so.id WHERE so.retailer_id = ?", [retailerId])
+                : query("SELECT * FROM store_order_items")
+            ).catch(e => { console.error("Sync store_order_items failed:", e); return []; })
         ]);
 
         // Transform retailer_settings rows into a category-keyed map
@@ -85,6 +92,9 @@ export async function syncData() {
             teamRoles: teamRoles || [],
             retailerPlugins: retailerPlugins || [],
             activityLogs: activityLogs || [],
+            storeListings: storeListings || [],
+            storeOrders: storeOrders || [],
+            storeOrderItems: storeOrderItems || [],
             marketplace: [],
             campaigns: [],
             bookings: []
@@ -113,5 +123,6 @@ window.getCache = () => window._db_cache || {
     groups: [], groupMembers: [], automations: [], automationMessages: [],
     communications: [], schemes: [], retailers: [], inventoryLogs: [], inquiries: [],
     repairs: [], retailerSettings: {}, teamMembers: [], teamRoles: [],
-    retailerPlugins: [], activityLogs: [], marketplace: [], campaigns: [], bookings: []
+    retailerPlugins: [], activityLogs: [], storeListings: [], storeOrders: [], storeOrderItems: [],
+    marketplace: [], campaigns: [], bookings: []
 };

@@ -44,6 +44,14 @@
   - Wired 3 relational pages: plugins (connect/disconnect with DB), teams (add/remove members from DB), logs (read from activity_logs table)
   - Custom save functions for taxes (nested GST/HSN JSON) and theme (dual localStorage + DB write)
   - All settings persist per retailer with zero-migration defaults strategy
+- [x] **My Store App:** Full ecommerce management module with 3 tabs:
+  - **Listings:** List inventory products on online store (add/activate/deactivate/delete)
+  - **Orders:** Track online orders with status workflow (pending → confirmed → shipped → delivered)
+  - **Shipping:** Manage shipments with courier/tracking info, ready-to-ship queue
+  - 3 new DB tables: `store_listings`, `store_orders`, `store_order_items`
+  - Order-to-sale conversion: delivered orders auto-create sale records with `source='online'`
+  - Sales Desk integration: online sales show "Online" badge (blue) vs "In-Store" badge in history
+  - Test order generator for demo/testing purposes
 
 ---
 
@@ -85,7 +93,7 @@ _(none currently)_
 ## Architecture Notes
 
 ### Multi-Tenant Design
-- **Tenant-scoped tables** (filtered by `retailer_id`): customers, companies, sales, groups, group_members, automations, automation_messages, communication_log, inquiries, repairs, inventory_logs, retailer_settings, team_members, team_roles, retailer_plugins, activity_logs
+- **Tenant-scoped tables** (filtered by `retailer_id`): customers, companies, sales, groups, group_members, automations, automation_messages, communication_log, inquiries, repairs, inventory_logs, retailer_settings, team_members, team_roles, retailer_plugins, activity_logs, store_listings, store_orders, store_order_items
 - **Global tables** (shared across all retailers): products, schemes, sale_items (inherits via sale_id join), retailers
 - **Tenant identity**: stored in `state.retailerId` + localStorage, used by all db helpers and sync
 - **Login**: authenticates by mobile number or store code against `retailers` table
@@ -101,4 +109,5 @@ _(none currently)_
 - `migrate_add_retailer_id.js` — live DB migration script (Phase 1)
 - `migrate_add_missing_tables.js` — adds inquiries, repairs, inventory_logs tables
 - `migrate_add_settings_tables.js` — adds retailer_settings, team_members, team_roles, retailer_plugins, activity_logs
+- `migrate_add_store_tables.js` — adds store_listings, store_orders, store_order_items + sales.source column
 - `seed_demo_retailers.js` — demo data seeding

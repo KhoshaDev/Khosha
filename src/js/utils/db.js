@@ -533,6 +533,86 @@ export const db = {
             );
         }
     },
+    // ── Store Listings ───────────────────────────────────────
+    storeListings: {
+        getAll: () => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM store_listings WHERE retailer_id = ? ORDER BY created_at DESC", [rid])
+                : query("SELECT * FROM store_listings ORDER BY created_at DESC");
+        },
+        getById: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM store_listings WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("SELECT * FROM store_listings WHERE id = ?", [id]);
+        },
+        add: (l) => {
+            const rid = getCurrentRetailerId();
+            const now = new Date().toISOString();
+            return query(
+                `INSERT INTO store_listings (id, product_id, product_name, brand, category, base_price, listing_price, description, status, stock_qty, created_at, updated_at, retailer_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [l.id, l.product_id, l.product_name, l.brand || null, l.category || null, l.base_price, l.listing_price, l.description || null, l.status || 'draft', l.stock_qty || 0, now, now, rid]
+            );
+        },
+        update: (id, u) => {
+            const rid = getCurrentRetailerId();
+            const now = new Date().toISOString();
+            return query(
+                `UPDATE store_listings SET listing_price = ?, description = ?, status = ?, stock_qty = ?, updated_at = ? WHERE id = ? AND retailer_id = ?`,
+                [u.listing_price, u.description, u.status, u.stock_qty, now, id, rid]
+            );
+        },
+        delete: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("DELETE FROM store_listings WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("DELETE FROM store_listings WHERE id = ?", [id]);
+        }
+    },
+    // ── Store Orders ─────────────────────────────────────────
+    storeOrders: {
+        getAll: () => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM store_orders WHERE retailer_id = ? ORDER BY order_date DESC", [rid])
+                : query("SELECT * FROM store_orders ORDER BY order_date DESC");
+        },
+        getById: (id) => {
+            const rid = getCurrentRetailerId();
+            return rid
+                ? query("SELECT * FROM store_orders WHERE id = ? AND retailer_id = ?", [id, rid])
+                : query("SELECT * FROM store_orders WHERE id = ?", [id]);
+        },
+        add: (o) => {
+            const rid = getCurrentRetailerId();
+            return query(
+                `INSERT INTO store_orders (id, order_number, customer_name, customer_phone, customer_email, shipping_address_line1, shipping_address_line2, shipping_city, shipping_state, shipping_pincode, order_date, total_amount, order_status, payment_status, payment_mode, payment_reference, tracking_number, courier_name, shipped_date, delivered_date, notes, sale_id, retailer_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [o.id, o.order_number, o.customer_name, o.customer_phone || null, o.customer_email || null, o.shipping_address_line1 || null, o.shipping_address_line2 || null, o.shipping_city || null, o.shipping_state || null, o.shipping_pincode || null, o.order_date, o.total_amount, o.order_status || 'pending', o.payment_status || 'pending', o.payment_mode || null, o.payment_reference || null, o.tracking_number || null, o.courier_name || null, o.shipped_date || null, o.delivered_date || null, o.notes || null, o.sale_id || null, rid]
+            );
+        },
+        updateStatus: (id, status, extra = {}) => {
+            const rid = getCurrentRetailerId();
+            const fields = ['order_status = ?'];
+            const values = [status];
+            if (extra.tracking_number !== undefined) { fields.push('tracking_number = ?'); values.push(extra.tracking_number); }
+            if (extra.courier_name !== undefined) { fields.push('courier_name = ?'); values.push(extra.courier_name); }
+            if (extra.shipped_date !== undefined) { fields.push('shipped_date = ?'); values.push(extra.shipped_date); }
+            if (extra.delivered_date !== undefined) { fields.push('delivered_date = ?'); values.push(extra.delivered_date); }
+            if (extra.sale_id !== undefined) { fields.push('sale_id = ?'); values.push(extra.sale_id); }
+            if (extra.payment_status !== undefined) { fields.push('payment_status = ?'); values.push(extra.payment_status); }
+            values.push(id);
+            if (rid) values.push(rid);
+            const where = rid ? 'WHERE id = ? AND retailer_id = ?' : 'WHERE id = ?';
+            return query(`UPDATE store_orders SET ${fields.join(', ')} ${where}`, values);
+        },
+        addItem: (i) => query(
+            `INSERT INTO store_order_items (id, order_id, listing_id, product_id, product_name, category, quantity, unit_price, discount_amount, final_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [i.id, i.order_id, i.listing_id || null, i.product_id, i.product_name, i.category || null, i.quantity, i.unit_price, i.discount_amount || 0, i.final_price]
+        ),
+        getItems: (orderId) => query("SELECT * FROM store_order_items WHERE order_id = ?", [orderId]),
+        deleteItems: (orderId) => query("DELETE FROM store_order_items WHERE order_id = ?", [orderId])
+    },
     approved: {
         // Check if mobile number is approved
         checkApproval: async (mobileNumber) => {

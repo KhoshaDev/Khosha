@@ -5,7 +5,7 @@ export const apps = [
     { n: 'CLIENTS', i: 'group', k: 'clients' },
     { n: 'INQUIRIES', i: 'help_outline', k: 'inquiries' },
     { n: 'PROMOTERS', i: 'business_center', k: 'promoters' },
-    { n: 'INTERNAL STORE', i: 'storefront' },
+    { n: 'MY STORE', i: 'storefront', k: 'mystore' },
     { n: 'INVENTORY', i: 'inventory_2', k: 'inventory' },
     { n: 'REPAIRS', i: 'build', k: 'repairs' },
     { n: 'MARKETPLACE', i: 'swap_horizontal_circle', k: 'marketplace' },

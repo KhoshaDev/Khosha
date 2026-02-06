@@ -264,8 +264,8 @@ export function renderHistory() {
                                         <div class="text-left flex-1 min-w-0">
                                             <div class="flex items-center gap-2 mb-1 text-left flex-wrap">
                                                 <p class="text-[9px] font-black text-slate-400 uppercase tracking-tighter text-left">Order #${s.id}</p>
-                                                <span class="bg-slate-100 px-1.5 py-0.5 rounded text-[7px] font-black text-slate-400 flex items-center gap-1 uppercase tracking-tighter text-left">
-                                                    <span class="material-icons-outlined text-[10px] text-left">store</span> In-Store
+                                                <span class="bg-slate-100 px-1.5 py-0.5 rounded text-[7px] font-black ${s.source === 'online' ? 'text-blue-500 bg-blue-50' : 'text-slate-400'} flex items-center gap-1 uppercase tracking-tighter text-left">
+                                                    <span class="material-icons-outlined text-[10px] text-left">${s.source === 'online' ? 'public' : 'store'}</span> ${s.source === 'online' ? 'Online' : 'In-Store'}
                                                 </span>
                                                 ${s.gst_required ? `
                                                     <span class="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-tighter">

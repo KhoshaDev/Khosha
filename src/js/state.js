@@ -48,6 +48,10 @@ export const state = {
     showSchemeDetails: false,
     marketplaceTab: 'browse', // browse | my-offers
     marketplaceViewMode: 'list', // list | add
+    myStoreTab: 'listings', // listings | orders | shipping
+    myStoreViewMode: 'list', // list | add-listing | order-detail
+    activeStoreOrderId: null,
+    activeListingId: null,
     isLoggedIn: savedLoginStatus,
     authMode: 'login', // login | register
     registrationStep: 1, // 1 | 2 | 3
@@ -295,6 +299,33 @@ window.setScheme = setScheme;
 window.toggleSchemeDetails = toggleSchemeDetails;
 window.setMarketplaceTab = setMarketplaceTab;
 window.setMarketplaceViewMode = setMarketplaceViewMode;
+
+export function setMyStoreTab(tab) {
+    state.myStoreTab = tab;
+    state.myStoreViewMode = 'list';
+    triggerRender();
+}
+
+export function setMyStoreViewMode(mode) {
+    state.myStoreViewMode = mode;
+    triggerRender();
+}
+
+export function setActiveStoreOrder(orderId) {
+    state.activeStoreOrderId = orderId;
+    state.myStoreViewMode = 'order-detail';
+    triggerRender();
+}
+
+export function setActiveListing(listingId) {
+    state.activeListingId = listingId;
+    triggerRender();
+}
+
+window.setMyStoreTab = setMyStoreTab;
+window.setMyStoreViewMode = setMyStoreViewMode;
+window.setActiveStoreOrder = setActiveStoreOrder;
+window.setActiveListing = setActiveListing;
 window.setRetailer = setRetailer;
 window.clearRetailer = clearRetailer;
 window.getRetailerId = getRetailerId;
