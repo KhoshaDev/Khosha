@@ -28,15 +28,14 @@ export function renderLauncher(mode) {
                 ${state.isLoggedIn ? `
                     ${renderAppsGrid(isMob)}
 
-                    ${isMob ? `
-                    <!-- Mobile Only News Ticker -->
+                    <!-- News Ticker -->
                     <div class="news-ticker-container mt-6">
                         <div class="news-ticker">
                             <span class="text-[9px] font-black uppercase tracking-widest text-slate-900 flex items-center gap-6">
                                 <span class="flex items-center gap-2"><div class="w-1.5 h-1.5 bg-slate-900 rounded-full animate-pulse"></div> TELECOM: 5G rollout reaches 92% urban coverage</span>
                             </span>
                         </div>
-                    </div>` : ''}
+                    </div>
                 ` : `
                     <!-- Auth View (Login only in desktop, full auth in mobile) -->
                     <div id="auth-container" class="h-full w-full py-10">

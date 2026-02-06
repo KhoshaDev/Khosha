@@ -47,7 +47,7 @@ export function renderSettingsDashboard(mode) {
                     <div class="grid ${gridClass} divide-x divide-y divide-slate-100 text-left">
                         ${settingsApps.map(a => `
                             <button onclick="${a.k ? `window.setSettingsView('${a.k}')` : ''}" class="aspect-square flex flex-col items-center justify-center p-1.5 hover:bg-slate-50 transition-all text-center ${state.settingsView === a.k ? 'bg-slate-100' : ''}">
-                                <span class="material-icons-outlined text-xl ${state.settingsView === a.k ? 'text-slate-900 font-bold' : 'text-slate-500'} mb-1 text-center">${a.i}</span>
+                                <span class="material-icons-outlined text-2xl ${state.settingsView === a.k ? 'text-slate-900 font-bold' : 'text-slate-500'} mb-1 text-center">${a.i}</span>
                                 <span class="text-[7px] font-black uppercase text-center tracking-wider leading-tight ${state.settingsView === a.k ? 'text-slate-900' : 'text-slate-500'}">${a.n}</span>
                             </button>
                         `).join('')}
