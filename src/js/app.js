@@ -17,6 +17,7 @@ import { renderInquiries } from './modules/inquiries/index.js';
 import { renderPreBooking } from './modules/prebooking/index.js';
 import { renderAutomation } from './modules/automation/index.js';
 import { renderMyStore } from './modules/mystore/index.js';
+import { renderNotifications } from './modules/notifications/index.js';
 import { initRouter, syncStateToUrl } from './router.js';
 import { syncData } from './utils/sync.js';
 // Initialize WATI WhatsApp integration
@@ -42,6 +43,7 @@ function renderAppPrimary() {
     if (state.currentApp === 'prebooking') return renderPreBooking('desktop-primary');
     if (state.currentApp === 'automation') return renderAutomation('desktop-primary');
     if (state.currentApp === 'mystore') return renderMyStore('desktop-primary');
+    if (state.currentApp === 'notifications') return renderNotifications('desktop-primary');
 
     return `<div class="p-10 flex items-center justify-center h-full text-slate-300 font-bold uppercase tracking-widest">App Module Not Found</div>`;
 }
@@ -64,6 +66,7 @@ function renderAppSecondary() {
     if (state.currentApp === 'prebooking') return renderPreBooking('desktop-secondary');
     if (state.currentApp === 'automation') return renderAutomation('desktop-secondary');
     if (state.currentApp === 'mystore') return renderMyStore('desktop-secondary');
+    if (state.currentApp === 'notifications') return renderNotifications('desktop-secondary');
 
     return `<div class="h-full flex items-center justify-center text-slate-300"><div class="text-center"><span class="material-icons-outlined text-4xl mb-2 opacity-50">grid_view</span><p class="text-[10px] font-black uppercase tracking-widest">Select an app to view details</p></div></div>`;
 }
@@ -158,6 +161,7 @@ function renderMobileContent() {
     else if (state.currentApp === 'prebooking') content = renderPreBooking('mobile');
     else if (state.currentApp === 'automation') content = renderAutomation('mobile');
     else if (state.currentApp === 'mystore') content = renderMyStore('mobile');
+    else if (state.currentApp === 'notifications') content = renderNotifications('mobile');
     else return `<div class="h-full flex items-center justify-center text-slate-300"><div class="text-center"><span class="material-icons-outlined text-4xl mb-2 opacity-50">grid_view</span><p class="text-[10px] font-black uppercase tracking-widest">App Module Not Found</p></div></div>`;
 
     return `

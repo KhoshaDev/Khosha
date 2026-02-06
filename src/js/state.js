@@ -4,6 +4,10 @@ const savedRetailerId = localStorage.getItem('retaileros_retailer_id') || null;
 const savedRetailerCode = localStorage.getItem('retaileros_retailer_code') || null;
 const savedRetailerName = localStorage.getItem('retaileros_retailer_name') || null;
 
+// Push notifications preference
+const savedPushPref = localStorage.getItem('retaileros_push_notifications') !== 'false';
+window._pushNotificationsEnabled = savedPushPref;
+
 export const state = {
     // Tenant identity
     retailerId: savedRetailerId,
@@ -352,3 +356,12 @@ export function setSelectedGroup(id) {
 
 window.setGroupViewMode = setGroupViewMode;
 window.setSelectedGroup = setSelectedGroup;
+
+// Push notifications toggle
+export function togglePushNotifications() {
+    const current = window._pushNotificationsEnabled !== false;
+    window._pushNotificationsEnabled = !current;
+    localStorage.setItem('retaileros_push_notifications', !current ? 'true' : 'false');
+    triggerRender();
+}
+window.togglePushNotifications = togglePushNotifications;
