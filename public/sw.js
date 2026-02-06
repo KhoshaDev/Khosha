@@ -1,4 +1,4 @@
-const CACHE_NAME = 'retaileros-v1';
+const CACHE_NAME = 'retaileros-v2';
 const PRECACHE_URLS = [
   '/',
   '/ros-logo.jpeg',
