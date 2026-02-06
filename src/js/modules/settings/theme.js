@@ -47,6 +47,10 @@ export function renderSettingsTheme() {
         if (data.display_mode) localStorage.setItem('retaileros_theme', data.display_mode);
         if (data.accent_color) localStorage.setItem('retaileros_accent', data.accent_color);
         if (data.layout_density) localStorage.setItem('retaileros_density', data.layout_density);
+        if (data.font_size) localStorage.setItem('retaileros_font_size', data.font_size);
+        if (data.animations_enabled !== undefined) localStorage.setItem('retaileros_animations', data.animations_enabled);
+        // Apply theme live
+        if (window.applyTheme) window.applyTheme();
 
         // Write to DB for cross-device sync
         try {
