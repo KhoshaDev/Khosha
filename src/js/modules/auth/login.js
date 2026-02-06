@@ -1,10 +1,20 @@
-export function renderLogin() {
+export function renderLogin(mode) {
+    const isMobile = mode === 'mobile';
     return `
-        <div class="h-full w-full flex flex-col items-center justify-center p-0 animate-slide-up">
-            <!-- Header Section (Subtle for Sidebar) -->
-            <div class="text-center mb-8">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Enterprise Authentication</p>
-            </div>
+        <div class="h-full w-full flex flex-col items-center justify-center p-6 animate-slide-up">
+            ${isMobile ? `
+                <!-- Logo + Branding for mobile -->
+                <div class="text-center mb-10">
+                    <img src="/ros-logo.jpeg" alt="RetailerOS" class="w-20 h-20 rounded-3xl object-cover shadow-xl mx-auto mb-4">
+                    <h1 class="text-lg font-black text-slate-900 tracking-tight">RetailerOS</h1>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Retail Store Management</p>
+                </div>
+            ` : `
+                <!-- Header Section (Subtle for Sidebar) -->
+                <div class="text-center mb-8">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Enterprise Authentication</p>
+                </div>
+            `}
 
             <!-- Login Content -->
             <div class="w-full max-w-sm space-y-8">
@@ -31,6 +41,20 @@ export function renderLogin() {
                     </button>
                 </div>
 
+                ${isMobile ? `
+                    <div class="pt-2 space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 h-px bg-slate-100"></div>
+                            <span class="text-[8px] font-black text-slate-300 uppercase tracking-widest">or</span>
+                            <div class="flex-1 h-px bg-slate-100"></div>
+                        </div>
+                        <button onclick="setAuthMode('register')" class="w-full py-4 bg-white border-2 border-slate-900 text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 active:scale-95 transition-all">
+                            <span class="material-icons-outlined text-sm">add_business</span>
+                            Register New Store
+                        </button>
+                    </div>
+                ` : ''}
+
                 <div class="text-center">
                     <button class="text-[9px] font-bold text-slate-300 uppercase tracking-widest hover:text-slate-900 transition-colors">Forgot PIN?</button>
                 </div>
@@ -41,6 +65,10 @@ export function renderLogin() {
                 <span class="material-icons-outlined text-slate-400 text-sm">verified_user</span>
                 <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">End-to-end Encrypted</p>
             </div>
+
+            ${isMobile ? `
+                <p class="text-center text-[7px] font-bold text-slate-300 uppercase tracking-[0.15em] mt-6">A product of Khosha Systems</p>
+            ` : ''}
         </div>
     `;
 }
