@@ -3,7 +3,7 @@
 > This file tracks all tasks for the RetailerOS project. Updated every session.
 > **Branch:** `dev-working`
 > **Netlify:** https://gorgeous-raindrop-78b58d.netlify.app/
-> **Last Updated:** 2026-02-07 (Session 2)
+> **Last Updated:** 2026-02-07 (Session 3)
 
 ---
 
@@ -82,6 +82,24 @@
   - `apple-mobile-web-app-capable` meta tags — no URL bar in standalone mode
   - Install prompt in browser, "Add to Home Screen" on mobile
 - [x] **Sales Desk scroll fix:** Fixed mobile scroll jumping when toggling discount/device details sections — preserves scroll position and smoothly scrolls expanded section into view
+- [x] **Comprehensive Module Audit & Fix (Session 3):**
+  - Auto-collapse discount section after applying in Sales Desk
+  - Notifications redesign: rich info cards with contextual action buttons, black/white/slate theme only
+  - Wired all non-functional buttons across 7 modules:
+    - Promoters: Confirm Hire → DB insert, toggle check-in switches, back button fix
+    - Schemes: Submit Claims → activity log, Download CSV from sales data
+    - Marketplace: Post to Marketplace → DB insert, Pause/Sold status buttons, Contact Seller
+    - Prebooking: Publish Campaign → generate shareable URL, Convert to Sale → navigate to Sales Desk
+    - Reports: Date range picker with apply/clear, CSV export by tab (sales/inventory/marketing)
+    - Repairs: Reassign button with team member picker from cache
+    - Inquiries: View All toggle between summary + recent vs full list
+  - DB schema: Added store_listings, store_orders, store_order_items to setup_db.js
+  - Fixed inventory/inward.js: replaced raw query with db helper, fixed product_id bug
+  - Fixed inventory/categories.js: malformed HTML tags causing raw HTML display
+  - My Store Listings tab: fixed mobile squeeze (added w-full)
+  - Launcher header: added time display next to date
+  - Marketing AI: wired OpenAI API key fallback for image generation
+  - Comprehensive dummy data: seeded repairs, inquiries, team members, inventory logs, store listings, store orders, activity logs for both demo retailers
 
 ---
 
@@ -93,8 +111,8 @@
 | Digital World | ROS-20260206-0002 | 9811223344 | New Delhi | `9811223344` |
 
 **Test multi-tenant isolation:**
-1. Login as TechZone (9876543210) — see 5 customers, 3 sales
-2. Logout — Login as Digital World (9811223344) — see 4 customers, 2 sales
+1. Login as TechZone (9876543210) — see 5 customers, 3 sales, 6 repairs, 5 inquiries, 5 team members, 3 store listings, 2 store orders
+2. Logout — Login as Digital World (9811223344) — see 4 customers, 2 sales + 1 draft, 4 repairs, 3 inquiries, 3 team members, 2 store listings
 3. Each retailer should ONLY see their own data!
 
 ---

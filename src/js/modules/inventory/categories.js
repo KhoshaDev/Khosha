@@ -28,7 +28,7 @@ export function renderCategories() {
     const totalMargin = Object.values(categoryStats).reduce((sum, c) => sum + c.margin, 0);
 
     return `
-        < div class="scrolling-content px-6 space-y-4 pb-32" >
+        <div class="scrolling-content px-6 space-y-4 pb-32">
             <div class="text-left mb-2 px-2">
                 <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest border-l-2 border-slate-900 pl-2 text-left">INVENTORY > OVERVIEW</p>
                 <h2 class="text-lg font-black text-slate-900 mt-1 text-left">Category Breakdown</h2>
@@ -65,7 +65,7 @@ export function renderCategories() {
     }).join('')
         }
 
-            < !--Brand Health Widget-- >
+            <!-- Brand Health Widget -->
         <div class="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm mt-4 text-left">
             <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-3 text-left">BRAND HEALTH</p>
             <div class="flex gap-4 text-left">
@@ -82,9 +82,9 @@ export function renderCategories() {
                 </div>
             </div>
         </div>
-        </div >
-         
-         < !--Floating Action Button-- >
+        </div>
+
+        <!-- Floating Action Button -->
         <div class="fixed bottom-8 right-8 z-20 sm:absolute sm:bottom-8 sm:right-8">
             <button onclick="setInventoryMode('inward')" class="w-14 h-14 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform">
                 <span class="material-icons-outlined text-2xl">add</span>

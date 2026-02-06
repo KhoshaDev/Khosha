@@ -19,7 +19,7 @@ export function renderMarketplaceList() {
                                 <p class="text-[8px] font-bold uppercase tracking-widest text-left">QTY: ${l.quantity}</p>
                             </div>
                         </div>
-                        <button class="w-full py-2.5 bg-slate-50 border border-slate-100 text-slate-900 rounded-lg text-[9px] font-black uppercase hover:bg-slate-900 hover:text-white transition-all text-center">Contact Seller</button>
+                        <button onclick="window.open('tel:${l.seller_phone || ''}'); event.stopPropagation();" class="w-full py-2.5 bg-slate-50 border border-slate-100 text-slate-900 rounded-lg text-[9px] font-black uppercase hover:bg-slate-900 hover:text-white transition-all text-center">Contact Seller</button>
                     </div>
                 </div>
             `).join('')}

@@ -1,5 +1,13 @@
 import { state } from '../../state.js';
 
+// Convert prebooking to sale — navigate to sales with customer pre-filled
+window._convertBookingToSale = (customerName) => {
+    // Navigate to Sales Desk new-sale tab
+    window.setTab && window.setTab('new-sale');
+    window.setApp('sales');
+    if (window.toast) window.toast.success(`Starting sale for ${customerName}`);
+};
+
 export function renderPreBookingDetails(isMobile) {
     const c = state.activeCampaign;
     if (!c) return '';
@@ -74,7 +82,7 @@ export function renderPreBookingDetails(isMobile) {
                             </div>
                             <span class="px-2 py-0.5 rounded-md text-[7px] font-black uppercase text-slate-900 tracking-wider text-right">${lead.status || 'PAID'}</span>
                         </div>
-                        <button class="w-full py-3 bg-slate-950 text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 group shadow-xl text-center">
+                        <button onclick="window._convertBookingToSale('${lead.customer_name}')" class="w-full py-3 bg-slate-950 text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 group shadow-xl text-center">
                             CONVERT TO SALE <span class="material-icons-outlined text-base group-hover:translate-x-1 transition-transform text-center">chevron_right</span>
                         </button>
                     </div>

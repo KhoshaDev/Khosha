@@ -3,7 +3,7 @@ export function renderPromoterPerformance() {
         <div class="h-full flex flex-col relative bg-white text-left">
              <!-- Header -->
             <div class="p-6 border-b border-slate-100 flex items-center justify-between shrink-0 text-left">
-                 <button onclick="setPromoterViewMode('list')" class="lg:hidden flex items-center gap-1 text-slate-400 hover:text-slate-900 transition-colors text-left">
+                 <button onclick="setPromoterViewMode('list')" class="flex items-center gap-1 text-slate-400 hover:text-slate-900 transition-colors text-left">
                     <span class="material-icons-outlined text-left">chevron_left</span>
                 </button>
                 <div class="text-left">

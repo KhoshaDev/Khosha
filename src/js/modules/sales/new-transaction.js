@@ -118,6 +118,7 @@ window.applyStoreDiscount = (idx, percentage) => {
             item.scheme_id = null;
             item.scheme_name = null;
             item.final_price = item.mop - item.discount_amount;
+            item.showDiscount = false;
         } else {
             // Clear discount
             item.discount_type = null;
@@ -152,6 +153,7 @@ window.applySchemeDiscount = (idx, schemeId) => {
                 item.discount_amount = scheme.discount_value;
             }
             item.final_price = item.mop - item.discount_amount;
+            item.showDiscount = false;
         } else {
             // Clear discount
             item.discount_type = null;

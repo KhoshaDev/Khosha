@@ -88,9 +88,13 @@ window._removeMarketingImage = (idx) => {
     window.triggerRender();
 };
 
+// Fallback API key for testing (remove in production)
+const TEMP_API_KEY = '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';
+function getOpenAIKey() { return localStorage.getItem('openai_api_key') || TEMP_API_KEY; }
+
 // Generate creative
 window._generateCreative = async () => {
-    const apiKey = localStorage.getItem('openai_api_key');
+    const apiKey = getOpenAIKey();
     if (!apiKey) {
         if (window.toast) window.toast.error('Please configure OpenAI API key in Settings → AI Config');
         return;
@@ -181,7 +185,7 @@ window._generateCreative = async () => {
 };
 
 export function renderMarketingGenerator() {
-    const apiKey = localStorage.getItem('openai_api_key');
+    const apiKey = getOpenAIKey();
     const hasKey = !!apiKey;
     const mState = window._marketingState;
     const suggestions = pickSuggestions();

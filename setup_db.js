@@ -419,7 +419,77 @@ async function main() {
         await client.execute(`CREATE INDEX IF NOT EXISTS idx_retailers_code ON retailers(retailer_code)`);
         await client.execute(`CREATE INDEX IF NOT EXISTS idx_retailers_email ON retailers(email)`);
 
-        console.log("✅ Tables created: customers, products, companies, sales, sale_items, groups, group_members, automations, automation_messages, communication_log, retailers");
+        // Store Listings (Online store products)
+        await client.execute(`
+            CREATE TABLE IF NOT EXISTS store_listings (
+                id TEXT PRIMARY KEY,
+                product_id TEXT NOT NULL,
+                product_name TEXT NOT NULL,
+                brand TEXT,
+                category TEXT,
+                base_price REAL,
+                listing_price REAL NOT NULL,
+                description TEXT,
+                status TEXT DEFAULT 'draft',
+                stock_qty INTEGER DEFAULT 0,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                retailer_id TEXT NOT NULL
+            )
+        `);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_store_listings_retailer ON store_listings(retailer_id)`);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_store_listings_status ON store_listings(retailer_id, status)`);
+
+        // Store Orders (Online orders)
+        await client.execute(`
+            CREATE TABLE IF NOT EXISTS store_orders (
+                id TEXT PRIMARY KEY,
+                order_number TEXT NOT NULL,
+                customer_name TEXT NOT NULL,
+                customer_phone TEXT,
+                customer_email TEXT,
+                shipping_address_line1 TEXT,
+                shipping_address_line2 TEXT,
+                shipping_city TEXT,
+                shipping_state TEXT,
+                shipping_pincode TEXT,
+                order_date TEXT NOT NULL,
+                total_amount REAL NOT NULL,
+                order_status TEXT DEFAULT 'pending',
+                payment_status TEXT DEFAULT 'pending',
+                payment_mode TEXT,
+                payment_reference TEXT,
+                tracking_number TEXT,
+                courier_name TEXT,
+                shipped_date TEXT,
+                delivered_date TEXT,
+                notes TEXT,
+                sale_id TEXT,
+                retailer_id TEXT NOT NULL
+            )
+        `);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_store_orders_retailer ON store_orders(retailer_id)`);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_store_orders_status ON store_orders(retailer_id, order_status)`);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_store_orders_date ON store_orders(retailer_id, order_date)`);
+
+        // Store Order Items
+        await client.execute(`
+            CREATE TABLE IF NOT EXISTS store_order_items (
+                id TEXT PRIMARY KEY,
+                order_id TEXT NOT NULL,
+                listing_id TEXT,
+                product_id TEXT NOT NULL,
+                product_name TEXT NOT NULL,
+                category TEXT,
+                quantity INTEGER NOT NULL,
+                unit_price REAL NOT NULL,
+                discount_amount REAL DEFAULT 0,
+                final_price REAL NOT NULL
+            )
+        `);
+        await client.execute(`CREATE INDEX IF NOT EXISTS idx_store_order_items_order ON store_order_items(order_id)`);
+
+        console.log("✅ Tables created: customers, products, companies, sales, sale_items, groups, group_members, automations, automation_messages, communication_log, retailers, store_listings, store_orders, store_order_items");
 
         // 4. Seed Basic Data with Indian Names
         console.log("🌱 Seeding data...");

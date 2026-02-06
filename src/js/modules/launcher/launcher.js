@@ -14,7 +14,7 @@ export function renderLauncher(mode) {
                         <img src="/ros-logo.jpeg" alt="RetailerOS" class="w-14 h-14 rounded-2xl object-cover shadow-lg hover:shadow-xl transition-shadow">
                         <div class="text-left">
                             ${state.isLoggedIn && state.retailerName ? `<p class="text-xs font-black text-slate-900 tracking-tight leading-tight">${state.retailerName}</p>` : ''}
-                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] ${state.isLoggedIn && state.retailerName ? 'mt-0.5' : ''}">${new Date().toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] ${state.isLoggedIn && state.retailerName ? 'mt-0.5' : ''}">${new Date().toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })} · ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>
                         </div>
                      </div>
                      ${!isMob ? '' : `

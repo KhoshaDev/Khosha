@@ -16,25 +16,26 @@ export async function confirmInward() {
     btn.innerText = 'Syncing...';
 
     try {
-        // 1. Add/Update Product
-        // For simplicity, we'll check if product exists by name or create new
-        const existing = await db.query("SELECT * FROM products WHERE name = ?", [model]);
-        let stock = 1;
+        // 1. Add/Update Product using cache lookup + db helpers
+        const allProducts = await db.inventory.getProducts();
+        const existing = allProducts.filter(p => p.name === model);
+        let productId;
         if (existing.length > 0) {
-            stock = parseInt(existing[0].stock) + 1;
+            productId = existing[0].id;
+            const stock = parseInt(existing[0].stock || 0) + 1;
             await db.query("UPDATE products SET stock = ? WHERE id = ?", [stock, existing[0].id]);
         } else {
-            const id = 'PRD-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            productId = 'PRD-' + Math.random().toString(36).substr(2, 6).toUpperCase();
             await db.query(`
                 INSERT INTO products (id, name, category, brand, price, stock, imei)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            `, [id, model, 'Smartphone', model.split(' ')[0], 50000, 1, imei]);
+            `, [productId, model, 'Smartphone', model.split(' ')[0], 50000, 1, imei]);
         }
 
         // 2. Add Inventory Log (tenant-scoped)
         await db.inventoryLogs.add({
             id: 'LOG-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
-            product_id: model,
+            product_id: productId,
             type: 'INWARD',
             quantity: 1,
             reason: 'New Shipment Arrival',

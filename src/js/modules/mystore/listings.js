@@ -61,7 +61,7 @@ export function renderListings(isMobile) {
     };
 
     return `
-        <div class="scrolling-content px-4 sm:px-8 space-y-6 pb-12 text-left flex-1 overflow-y-auto">
+        <div class="scrolling-content px-4 sm:px-8 space-y-6 pb-12 text-left flex-1 overflow-y-auto w-full">
             <!-- Stats -->
             <div class="grid grid-cols-3 gap-3 text-left">
                 <div class="card p-4 text-center">

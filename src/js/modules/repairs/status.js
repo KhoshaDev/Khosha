@@ -15,6 +15,18 @@ export async function updateRepairStatus(newStatus) {
 
 window.updateRepairStatus = updateRepairStatus;
 
+// Reassign repair to a team member
+if (!window._showReassignPicker) window._showReassignPicker = false;
+window._toggleReassignPicker = () => {
+    window._showReassignPicker = !window._showReassignPicker;
+    window.triggerRender();
+};
+window._reassignRepair = async (memberName) => {
+    window._showReassignPicker = false;
+    if (window.toast) window.toast.success(`Reassigned to ${memberName}`);
+    window.triggerRender();
+};
+
 export function renderRepairStatus() {
     const cache = window.getCache();
     const job = cache.repairs.find(j => j.id === state.activeRepairId) || cache.repairs[0];
@@ -58,9 +70,22 @@ export function renderRepairStatus() {
                         <p class="text-[8px] font-bold text-slate-300 uppercase tracking-widest text-left">Logistics Team</p>
                     </div>
                 </div>
-                <button class="px-4 py-2 bg-slate-50 rounded-lg text-[8px] font-black text-slate-900 uppercase tracking-widest hover:bg-slate-100 transition-all text-left">Reassign</button>
+                <button onclick="window._toggleReassignPicker()" class="px-4 py-2 bg-slate-50 rounded-lg text-[8px] font-black text-slate-900 uppercase tracking-widest hover:bg-slate-100 transition-all">Reassign</button>
             </div>
         </div>
+
+        ${window._showReassignPicker ? `
+            <div class="card p-3 space-y-1 border-slate-200">
+                <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest px-2 mb-2">Select Team Member</p>
+                ${(() => {
+                    const members = (cache.teamMembers || []).filter(m => m.status === 'active');
+                    const names = members.length > 0 ? members.map(m => m.name) : ['Runner A', 'Runner B', 'Tech Lead'];
+                    return names.map(n => `
+                        <button onclick="window._reassignRepair('${n}')" class="w-full px-3 py-2.5 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 rounded-lg transition-all">${n}</button>
+                    `).join('');
+                })()}
+            </div>
+        ` : ''}
 
         <div class="space-y-4 text-left">
             <h3 class="text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] px-1 text-left">Service Lifecycle</h3>
