@@ -33,7 +33,9 @@ const TABLE_SYNC_PLAN = {
   resources: ['id', 'name', 'role', 'type', 'start_date', 'job_description'],
   documents: ['id', 'title', 'path', 'created_at'],
   credentials_registry: ['id', 'key_alias', 'status', 'location'],
-  integrations_github: ['id', 'repo', 'owner', 'token_env_var', 'enabled']
+  integrations_github: ['id', 'repo', 'owner', 'token_env_var', 'enabled'],
+  agent_registry: ['id', 'agent_key', 'name', 'role', 'session_key', 'session_id', 'status', 'created_at', 'updated_at'],
+  agent_timeline: ['id', 'agent_key', 'event_type', 'message', 'created_at']
 };
 
 async function ensureTursoSchemaAndSeed() {
@@ -122,6 +124,31 @@ if (!projectColumns.includes('ceo_owner')) {
 
 const now = () => new Date().toISOString();
 const id = (p) => `${p}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+const TEAM_AGENT_BOOTSTRAP = {
+  keith: { name: 'Keith (CEO)', role: 'CEO Agent', session_key: 'agent:main:main', session_id: 'agent:main:main' },
+  vivaan: { name: 'Vivaan (Delivery Director)', role: 'Delivery Director Agent', session_key: 'agent:main:subagent:d8e6f33f-a717-46fa-bdc4-93338294dabf', session_id: 'c31b9f6c-f077-46e9-a808-5d14d689bf9c' },
+  aarya: { name: 'Aarya (Client Success)', role: 'Client Success Manager Agent', session_key: 'agent:main:subagent:53b59159-13a8-4609-aa03-28a81539a593', session_id: '84caa814-8059-4228-8dee-8103224beeb7' },
+  ira: { name: 'Ira (Design Lead)', role: 'Design Lead Agent', session_key: 'agent:main:subagent:491c98e1-9ed4-461e-8781-629951ae9640', session_id: 'ff041717-fa3d-4702-94ea-00af779f7e71' },
+  dev: { name: 'Dev (Engineering Lead)', role: 'Engineering Lead Agent', session_key: 'agent:main:subagent:f713cdd7-5818-49c7-ae93-8c911b6b719e', session_id: 'd29a62b2-8201-483f-8b03-32d94838c03a' },
+  tara: { name: 'Tara (QA & Reliability)', role: 'QA & Reliability Agent', session_key: 'agent:main:subagent:53aa796f-1ac7-4435-bd9c-0ca012ec3ef5', session_id: '739fc261-b154-4838-88c0-02867900d6b6' },
+  kabir: { name: 'Kabir (Growth & Partnerships)', role: 'Growth & Partnerships Agent', session_key: 'agent:main:subagent:37e5c6c6-d857-4e77-95c4-5ee6272e1f7b', session_id: '45897f8e-1559-4479-97af-443b1a06c023' },
+  nisha: { name: 'Nisha (Finance & Ops)', role: 'Finance & Ops Controller Agent', session_key: 'agent:main:subagent:8a61e341-2e2b-4161-b5e9-745b65cb341e', session_id: 'a12d8647-70bf-420d-81ac-2ed2512ea5c2' },
+  om: { name: 'Om (Knowledge & Compliance)', role: 'Knowledge & Compliance Agent', session_key: 'agent:main:subagent:1540c8dc-3c23-442e-b53d-1effeb87e7ba', session_id: '4847ebe6-0b79-48da-955b-a28ee7e7ef50' }
+};
+
+function ensureAgentRegistrySeed() {
+  for (const [agent_key, data] of Object.entries(TEAM_AGENT_BOOTSTRAP)) {
+    const existing = db.prepare('SELECT id FROM agent_registry WHERE agent_key=?').get(agent_key);
+    if (!existing) {
+      db.prepare('INSERT INTO agent_registry (id, agent_key, name, role, session_key, session_id, status, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)')
+        .run(id('areg'), agent_key, data.name, data.role, data.session_key, data.session_id, 'live', now(), now());
+      db.prepare('INSERT INTO agent_timeline (id, agent_key, event_type, message, created_at) VALUES (?,?,?,?,?)')
+        .run(id('atl'), agent_key, 'created', `Agent ${data.name} registered`, now());
+    }
+  }
+}
+ensureAgentRegistrySeed();
 
 function getGithubConfig() {
   return db.prepare('SELECT * FROM integrations_github WHERE enabled=1 ORDER BY rowid DESC LIMIT 1').get();
@@ -608,43 +635,115 @@ app.post('/tasks/auto-distribute', (_req, res) => {
   res.json({ ok: true, reassigned, blockedUpdated });
 });
 
-const TEAM_AGENT_SESSIONS = {
-  keith: { name: 'Keith (CEO)', sessionId: 'agent:main:main' },
-  vivaan: { name: 'Vivaan (Delivery Director)', sessionId: 'c31b9f6c-f077-46e9-a808-5d14d689bf9c' },
-  aarya: { name: 'Aarya (Client Success)', sessionId: '84caa814-8059-4228-8dee-8103224beeb7' },
-  ira: { name: 'Ira (Design Lead)', sessionId: 'ff041717-fa3d-4702-94ea-00af779f7e71' },
-  dev: { name: 'Dev (Engineering Lead)', sessionId: 'd29a62b2-8201-483f-8b03-32d94838c03a' },
-  tara: { name: 'Tara (QA & Reliability)', sessionId: '739fc261-b154-4838-88c0-02867900d6b6' },
-  kabir: { name: 'Kabir (Growth & Partnerships)', sessionId: '45897f8e-1559-4479-97af-443b1a06c023' },
-  nisha: { name: 'Nisha (Finance & Ops)', sessionId: 'a12d8647-70bf-420d-81ac-2ed2512ea5c2' },
-  om: { name: 'Om (Knowledge & Compliance)', sessionId: '4847ebe6-0b79-48da-955b-a28ee7e7ef50' }
-};
+function getTeamAgentSessions() {
+  const rows = db.prepare('SELECT agent_key, name, role, session_key, session_id, status FROM agent_registry ORDER BY name').all();
+  const map = {};
+  for (const r of rows) {
+    map[r.agent_key] = {
+      name: r.name,
+      role: r.role,
+      sessionId: r.session_id,
+      sessionKey: r.session_key,
+      status: r.status
+    };
+  }
+  return map;
+}
+
+function callAgentSession(sessionId, message) {
+  const out = execFileSync('openclaw', ['agent', '--session-id', sessionId, '--message', message, '--json'], {
+    encoding: 'utf8',
+    timeout: 120000
+  });
+  const parsed = JSON.parse(out || '{}');
+  const payloads = parsed?.result?.payloads || [];
+  return payloads.map((p) => p?.text).filter(Boolean).join('\n\n') || 'No response.';
+}
 
 app.get('/teamchat/agents', (_req, res) => {
-  const agents = Object.entries(TEAM_AGENT_SESSIONS).map(([key, value]) => ({ key, name: value.name }));
+  const sessions = getTeamAgentSessions();
+  const agents = [{ key: 'all', name: 'Group Chat (All Agents)' }, ...Object.entries(sessions).map(([key, value]) => ({ key, name: value.name, role: value.role, status: value.status }))];
   res.json({ agents });
 });
 
 app.post('/teamchat/send', (req, res) => {
   try {
+    const sessions = getTeamAgentSessions();
     const agentKey = String(req.body?.agent || '').toLowerCase();
     const message = String(req.body?.message || '').trim();
-    if (!agentKey || !TEAM_AGENT_SESSIONS[agentKey]) return res.status(400).json({ error: 'Unknown agent' });
     if (!message) return res.status(400).json({ error: 'Message is required' });
 
-    const sessionId = TEAM_AGENT_SESSIONS[agentKey].sessionId;
-    const out = execFileSync('openclaw', ['agent', '--session-id', sessionId, '--message', message, '--json'], {
-      encoding: 'utf8',
-      timeout: 120000
-    });
+    if (agentKey === 'all') {
+      const replies = [];
+      for (const [key, session] of Object.entries(sessions)) {
+        try {
+          const text = callAgentSession(session.sessionId, message);
+          replies.push({ key, agent: session.name, reply: text });
+          db.prepare('INSERT INTO agent_timeline (id, agent_key, event_type, message, created_at) VALUES (?,?,?,?,?)')
+            .run(id('atl'), key, 'group_chat', `User: ${message} | Agent reply: ${text.slice(0, 4000)}`, now());
+        } catch (err) {
+          replies.push({ key, agent: session.name, reply: `Error: ${err?.message || 'failed'}` });
+        }
+      }
+      return res.json({ ok: true, group: true, replies });
+    }
 
-    const parsed = JSON.parse(out || '{}');
-    const payloads = parsed?.result?.payloads || [];
-    const text = payloads.map((p) => p?.text).filter(Boolean).join('\n\n') || 'No response.';
-    res.json({ ok: true, agent: TEAM_AGENT_SESSIONS[agentKey].name, reply: text });
+    if (!sessions[agentKey]) return res.status(400).json({ error: 'Unknown agent' });
+    const session = sessions[agentKey];
+    const text = callAgentSession(session.sessionId, message);
+    db.prepare('INSERT INTO agent_timeline (id, agent_key, event_type, message, created_at) VALUES (?,?,?,?,?)')
+      .run(id('atl'), agentKey, 'chat', `User: ${message} | Agent reply: ${text.slice(0, 4000)}`, now());
+
+    res.json({ ok: true, agent: session.name, reply: text });
   } catch (err) {
     res.status(500).json({ error: err?.message || 'Failed to contact agent' });
   }
+});
+
+app.get('/resources/agents', (_req, res) => {
+  const rows = db.prepare('SELECT * FROM agent_registry ORDER BY name').all();
+  const enriched = rows.map((r) => {
+    const timelineCount = db.prepare('SELECT COUNT(*) as c FROM agent_timeline WHERE agent_key=?').get(r.agent_key)?.c || 0;
+    const lastEvent = db.prepare('SELECT created_at, event_type FROM agent_timeline WHERE agent_key=? ORDER BY created_at DESC LIMIT 1').get(r.agent_key) || null;
+    return { ...r, timeline_count: timelineCount, last_event: lastEvent };
+  });
+  res.json(enriched);
+});
+
+app.get('/resources/agents/:agentKey/timeline', (req, res) => {
+  const events = db.prepare('SELECT * FROM agent_timeline WHERE agent_key=? ORDER BY created_at DESC LIMIT 500').all(req.params.agentKey);
+  res.json(events);
+});
+
+app.post('/resources/agents/register', (req, res) => {
+  const body = req.body || {};
+  const agent_key = String(body.agent_key || '').trim().toLowerCase();
+  if (!agent_key) return res.status(400).json({ error: 'agent_key required' });
+  const existing = db.prepare('SELECT id FROM agent_registry WHERE agent_key=?').get(agent_key);
+  const row = {
+    id: existing?.id || id('areg'),
+    agent_key,
+    name: body.name || agent_key,
+    role: body.role || null,
+    session_key: body.session_key || null,
+    session_id: body.session_id || null,
+    status: body.status || 'live',
+    created_at: existing ? undefined : now(),
+    updated_at: now()
+  };
+
+  if (existing) {
+    db.prepare('UPDATE agent_registry SET name=?, role=?, session_key=?, session_id=?, status=?, updated_at=? WHERE agent_key=?')
+      .run(row.name, row.role, row.session_key, row.session_id, row.status, row.updated_at, agent_key);
+  } else {
+    db.prepare('INSERT INTO agent_registry (id, agent_key, name, role, session_key, session_id, status, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)')
+      .run(row.id, row.agent_key, row.name, row.role, row.session_key, row.session_id, row.status, now(), row.updated_at);
+  }
+
+  db.prepare('INSERT INTO agent_timeline (id, agent_key, event_type, message, created_at) VALUES (?,?,?,?,?)')
+    .run(id('atl'), agent_key, 'register', `Agent registered/updated: ${row.name}`, now());
+
+  res.json({ ok: true });
 });
 
 const port = process.env.PM_PORT || 8787;

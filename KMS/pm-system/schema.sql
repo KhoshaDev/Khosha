@@ -77,3 +77,23 @@ CREATE TABLE IF NOT EXISTS integrations_github (
   token_env_var TEXT NOT NULL,
   enabled INTEGER NOT NULL DEFAULT 1
 );
+
+CREATE TABLE IF NOT EXISTS agent_registry (
+  id TEXT PRIMARY KEY,
+  agent_key TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  role TEXT,
+  session_key TEXT,
+  session_id TEXT,
+  status TEXT NOT NULL DEFAULT 'live',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS agent_timeline (
+  id TEXT PRIMARY KEY,
+  agent_key TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
