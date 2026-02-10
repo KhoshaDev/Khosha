@@ -1,12 +1,9 @@
 (function(){
   const menu = [
-    ['index.html','🏠 Dashboard'],
-    ['projects.html','🚀 Projects'],
-    ['agents.html','🤖 Agents'],
-    ['tasks.html','✅ Tasks'],
-    ['upgrade.html','🎯 Redesign Live'],
-    ['comments.html','📝 Comments'],
-    ['documents.html','📁 Documents']
+    ['index.html','Dashboard'],
+    ['projects.html','Projects'],
+    ['agents.html','Agents'],
+    ['documents.html','Reports']
   ];
   const nav = document.getElementById('global-nav');
   if (!nav) return;
