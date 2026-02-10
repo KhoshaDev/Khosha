@@ -130,6 +130,40 @@ function keywordSet(text) {
   return new Set((text || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
 }
 
+function suggestAssigneeByHeuristic(task, resources, taskById = new Map()) {
+  if (!resources?.length) return null;
+
+  if (task.depends_on) {
+    const dep = taskById.get(task.depends_on);
+    if (dep?.assignee) return dep.assignee;
+  }
+
+  const text = `${task.title || ''} ${task.idle_reason || ''}`.toLowerCase();
+  const textKeywords = keywordSet(text);
+  let best = null;
+
+  for (const resource of resources) {
+    const roleText = `${resource.role || ''} ${resource.job_description || ''} ${resource.name || ''}`.toLowerCase();
+    const roleKeywords = keywordSet(roleText);
+    let score = 0;
+
+    for (const kw of roleKeywords) {
+      if (textKeywords.has(kw)) score += 1;
+    }
+
+    if ((resource.type || '').toLowerCase() === 'agent') score += 1;
+
+    if (!best || score > best.score) best = { name: resource.name, score };
+  }
+
+  if (!best || best.score <= 0) {
+    const firstAgent = resources.find((r) => (r.type || '').toLowerCase() === 'agent');
+    return firstAgent?.name || resources[0]?.name || null;
+  }
+
+  return best.name;
+}
+
 app.get('/health', (_req, res) => res.json({ ok: true, tursoConfigured: Boolean(turso) }));
 
 app.get('/turso/health', async (_req, res) => {
@@ -223,7 +257,10 @@ app.post('/projects/:projectId/bootstrap-ceo', (req, res) => {
 
 app.get('/projects/:projectId/tasks', (req, res) => res.json(db.prepare('SELECT * FROM tasks WHERE project_id=? ORDER BY updated_at DESC').all(req.params.projectId)));
 app.post('/projects/:projectId/tasks', (req, res) => {
-  const t = {
+  const resources = db.prepare('SELECT * FROM resources').all();
+  const taskById = new Map(db.prepare('SELECT * FROM tasks').all().map((x) => [x.id, x]));
+
+  const draft = {
     id: id('task'),
     project_id: req.params.projectId,
     title: req.body.title,
@@ -239,6 +276,9 @@ app.post('/projects/:projectId/tasks', (req, res) => {
     created_at: now(),
     updated_at: now()
   };
+
+  const suggested = suggestAssigneeByHeuristic(draft, resources, taskById);
+  const t = { ...draft, assignee: draft.assignee || suggested };
   db.prepare(`INSERT INTO tasks (
     id, project_id, title, status, assignee, approved,
     github_issue_number, github_issue_url, start_date, due_date, depends_on, idle_reason, created_at, updated_at
@@ -527,6 +567,44 @@ app.post('/agents/auto-pick', (_req, res) => {
     }
   }
   res.json({ ok: true, picked });
+});
+
+app.post('/tasks/auto-distribute', (_req, res) => {
+  const resources = db.prepare('SELECT * FROM resources').all();
+  const tasks = db.prepare('SELECT * FROM tasks ORDER BY created_at ASC').all();
+  const taskById = new Map(tasks.map((t) => [t.id, t]));
+
+  let reassigned = 0;
+  let blockedUpdated = 0;
+
+  for (const t of tasks) {
+    let nextStatus = t.status;
+    let nextIdle = t.idle_reason;
+
+    if (t.depends_on) {
+      const dep = taskById.get(t.depends_on);
+      if (dep && dep.status !== 'done') {
+        nextStatus = 'blocked';
+        nextIdle = `Blocked by ${dep.id}`;
+      } else if (t.status === 'blocked') {
+        nextStatus = 'todo';
+        nextIdle = null;
+      }
+    }
+
+    const suggested = suggestAssigneeByHeuristic(t, resources, taskById);
+    const shouldReassign = !t.assignee || t.assignee === 'Keith Anderson';
+    const nextAssignee = shouldReassign ? suggested : t.assignee;
+
+    if (nextAssignee !== t.assignee || nextStatus !== t.status || nextIdle !== t.idle_reason) {
+      db.prepare('UPDATE tasks SET assignee=?, status=?, idle_reason=?, updated_at=? WHERE id=?')
+        .run(nextAssignee, nextStatus, nextIdle, now(), t.id);
+      if (nextAssignee !== t.assignee) reassigned += 1;
+      if (nextStatus !== t.status || nextIdle !== t.idle_reason) blockedUpdated += 1;
+    }
+  }
+
+  res.json({ ok: true, reassigned, blockedUpdated });
 });
 
 const port = process.env.PM_PORT || 8787;
