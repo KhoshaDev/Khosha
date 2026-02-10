@@ -1,15 +1,12 @@
 (function(){
   const menu = [
-    ['index.html','🏠 Home'],
-    ['upgrade.html','🎯 Redesign Live'],
+    ['index.html','🏠 Dashboard'],
     ['projects.html','🚀 Projects'],
+    ['agents.html','🤖 Agents'],
     ['tasks.html','✅ Tasks'],
-    ['kanban.html','🧩 Kanban'],
+    ['upgrade.html','🎯 Redesign Live'],
     ['comments.html','📝 Comments'],
-    ['agent-chat.html','💬 Chat'],
-    ['resources.html','👥 Resources'],
-    ['documents.html','📁 Documents'],
-    ['credentials.html','🔐 Credentials']
+    ['documents.html','📁 Documents']
   ];
   const nav = document.getElementById('global-nav');
   if (!nav) return;

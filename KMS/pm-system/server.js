@@ -24,8 +24,8 @@ const tursoToken = process.env.TURSO_AUTH_TOKEN;
 const turso = (tursoUrl && tursoToken) ? createClient({ url: tursoUrl, authToken: tursoToken }) : null;
 
 const TABLE_SYNC_PLAN = {
-  projects: ['id', 'name', 'status', 'owner', 'description', 'scope_summary', 'ceo_owner', 'created_at', 'updated_at'],
-  tasks: ['id', 'project_id', 'title', 'status', 'assignee', 'approved', 'github_issue_number', 'github_issue_url', 'created_at', 'updated_at'],
+  projects: ['id', 'name', 'status', 'owner', 'description', 'scope_summary', 'dependencies', 'ceo_owner', 'created_at', 'updated_at'],
+  tasks: ['id', 'project_id', 'title', 'status', 'assignee', 'approved', 'github_issue_number', 'github_issue_url', 'start_date', 'due_date', 'depends_on', 'idle_reason', 'created_at', 'updated_at'],
   subtasks: ['id', 'task_id', 'title', 'done', 'created_at'],
   comments: ['id', 'project_id', 'task_id', 'author', 'body', 'created_at'],
   chats: ['id', 'agent', 'message', 'created_at'],
@@ -51,9 +51,14 @@ async function ensureTursoSchemaAndSeed() {
     const tursoMigrations = [
       'ALTER TABLE projects ADD COLUMN description TEXT',
       'ALTER TABLE projects ADD COLUMN scope_summary TEXT',
+      'ALTER TABLE projects ADD COLUMN dependencies TEXT',
       "ALTER TABLE projects ADD COLUMN ceo_owner TEXT DEFAULT 'Keith Anderson'",
       'ALTER TABLE tasks ADD COLUMN github_issue_number INTEGER',
-      'ALTER TABLE tasks ADD COLUMN github_issue_url TEXT'
+      'ALTER TABLE tasks ADD COLUMN github_issue_url TEXT',
+      'ALTER TABLE tasks ADD COLUMN start_date TEXT',
+      'ALTER TABLE tasks ADD COLUMN due_date TEXT',
+      'ALTER TABLE tasks ADD COLUMN depends_on TEXT',
+      'ALTER TABLE tasks ADD COLUMN idle_reason TEXT'
     ];
 
     for (const mig of tursoMigrations) {
@@ -87,6 +92,18 @@ if (!taskColumns.includes('github_issue_number')) {
 if (!taskColumns.includes('github_issue_url')) {
   db.exec('ALTER TABLE tasks ADD COLUMN github_issue_url TEXT');
 }
+if (!taskColumns.includes('start_date')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN start_date TEXT');
+}
+if (!taskColumns.includes('due_date')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN due_date TEXT');
+}
+if (!taskColumns.includes('depends_on')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN depends_on TEXT');
+}
+if (!taskColumns.includes('idle_reason')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN idle_reason TEXT');
+}
 
 const projectColumns = db.prepare('PRAGMA table_info(projects)').all().map((c) => c.name);
 if (!projectColumns.includes('description')) {
@@ -94,6 +111,9 @@ if (!projectColumns.includes('description')) {
 }
 if (!projectColumns.includes('scope_summary')) {
   db.exec('ALTER TABLE projects ADD COLUMN scope_summary TEXT');
+}
+if (!projectColumns.includes('dependencies')) {
+  db.exec('ALTER TABLE projects ADD COLUMN dependencies TEXT');
 }
 if (!projectColumns.includes('ceo_owner')) {
   db.exec("ALTER TABLE projects ADD COLUMN ceo_owner TEXT DEFAULT 'Keith Anderson'");
@@ -141,11 +161,12 @@ app.post('/projects', (req, res) => {
     owner: req.body.owner || 'Keith Anderson',
     description: req.body.description || null,
     scope_summary: req.body.scope_summary || null,
+    dependencies: req.body.dependencies || null,
     ceo_owner: req.body.ceo_owner || 'Keith Anderson',
     created_at: now(),
     updated_at: now()
   };
-  db.prepare('INSERT INTO projects (id,name,status,owner,description,scope_summary,ceo_owner,created_at,updated_at) VALUES (@id,@name,@status,@owner,@description,@scope_summary,@ceo_owner,@created_at,@updated_at)').run(x);
+  db.prepare('INSERT INTO projects (id,name,status,owner,description,scope_summary,dependencies,ceo_owner,created_at,updated_at) VALUES (@id,@name,@status,@owner,@description,@scope_summary,@dependencies,@ceo_owner,@created_at,@updated_at)').run(x);
   res.json(x);
 });
 
@@ -169,10 +190,10 @@ app.post('/projects/:projectId/bootstrap-ceo', (req, res) => {
 
   const insertTask = db.prepare(`INSERT INTO tasks (
     id, project_id, title, status, assignee, approved,
-    github_issue_number, github_issue_url, created_at, updated_at
+    github_issue_number, github_issue_url, start_date, due_date, depends_on, idle_reason, created_at, updated_at
   ) VALUES (
     @id, @project_id, @title, @status, @assignee, @approved,
-    @github_issue_number, @github_issue_url, @created_at, @updated_at
+    @github_issue_number, @github_issue_url, @start_date, @due_date, @depends_on, @idle_reason, @created_at, @updated_at
   )`);
 
   const created = [];
@@ -186,6 +207,10 @@ app.post('/projects/:projectId/bootstrap-ceo', (req, res) => {
       approved: 0,
       github_issue_number: null,
       github_issue_url: null,
+      start_date: null,
+      due_date: null,
+      depends_on: null,
+      idle_reason: null,
       created_at: now(),
       updated_at: now()
     };
@@ -207,15 +232,19 @@ app.post('/projects/:projectId/tasks', (req, res) => {
     approved: 0,
     github_issue_number: null,
     github_issue_url: null,
+    start_date: req.body.start_date || null,
+    due_date: req.body.due_date || null,
+    depends_on: req.body.depends_on || null,
+    idle_reason: req.body.idle_reason || null,
     created_at: now(),
     updated_at: now()
   };
   db.prepare(`INSERT INTO tasks (
     id, project_id, title, status, assignee, approved,
-    github_issue_number, github_issue_url, created_at, updated_at
+    github_issue_number, github_issue_url, start_date, due_date, depends_on, idle_reason, created_at, updated_at
   ) VALUES (
     @id, @project_id, @title, @status, @assignee, @approved,
-    @github_issue_number, @github_issue_url, @created_at, @updated_at
+    @github_issue_number, @github_issue_url, @start_date, @due_date, @depends_on, @idle_reason, @created_at, @updated_at
   )`).run(t);
   res.json(t);
 });
@@ -385,6 +414,119 @@ app.post('/tasks/:taskId/suggest-assignee', (req, res) => {
     score: best.score,
     reason: `Matched task/discussion keywords with role: ${best.resource.role}`
   });
+});
+
+// ---- KMS v2 operational endpoints ----
+app.get('/dashboard/summary', (_req, res) => {
+  const projects = db.prepare('SELECT COUNT(*) as c FROM projects').get().c;
+  const tasks = db.prepare('SELECT COUNT(*) as c FROM tasks').get().c;
+  const resources = db.prepare("SELECT COUNT(*) as c FROM resources WHERE type='agent'").get().c;
+  const humans = db.prepare("SELECT COUNT(*) as c FROM resources WHERE type='human'").get().c;
+  res.json({ projects, tasks, resources, humans });
+});
+
+app.get('/projects/:projectId/overview', (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id=?').get(req.params.projectId);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+  const tasks = db.prepare('SELECT * FROM tasks WHERE project_id=? ORDER BY updated_at DESC').all(req.params.projectId);
+  const taskIds = tasks.map(t => t.id);
+  let subtasks = [];
+  if (taskIds.length) {
+    const q = taskIds.map(() => '?').join(',');
+    subtasks = db.prepare(`SELECT * FROM subtasks WHERE task_id IN (${q})`).all(...taskIds);
+  }
+  const people = [...new Set(tasks.map(t => t.assignee).filter(Boolean))];
+  const progress = {
+    total: tasks.length,
+    done: tasks.filter(t => t.status === 'done').length,
+    in_progress: tasks.filter(t => t.status === 'in_progress').length,
+    todo: tasks.filter(t => t.status === 'todo').length,
+    blocked: tasks.filter(t => t.status === 'blocked').length
+  };
+  res.json({ project, tasks, subtasks, people, progress });
+});
+
+app.put('/projects/:projectId', (req, res) => {
+  const p = db.prepare('SELECT * FROM projects WHERE id=?').get(req.params.projectId);
+  if (!p) return res.status(404).json({ error: 'Project not found' });
+  const next = {
+    ...p,
+    name: req.body.name ?? p.name,
+    status: req.body.status ?? p.status,
+    owner: req.body.owner ?? p.owner,
+    description: req.body.description ?? p.description,
+    scope_summary: req.body.scope_summary ?? p.scope_summary,
+    dependencies: req.body.dependencies ?? p.dependencies,
+    ceo_owner: req.body.ceo_owner ?? p.ceo_owner,
+    updated_at: now()
+  };
+  db.prepare('UPDATE projects SET name=@name,status=@status,owner=@owner,description=@description,scope_summary=@scope_summary,dependencies=@dependencies,ceo_owner=@ceo_owner,updated_at=@updated_at WHERE id=@id').run(next);
+  res.json(next);
+});
+
+app.delete('/projects/:projectId', (req, res) => {
+  db.prepare('DELETE FROM subtasks WHERE task_id IN (SELECT id FROM tasks WHERE project_id=?)').run(req.params.projectId);
+  db.prepare('DELETE FROM tasks WHERE project_id=?').run(req.params.projectId);
+  db.prepare('DELETE FROM comments WHERE project_id=?').run(req.params.projectId);
+  db.prepare('DELETE FROM projects WHERE id=?').run(req.params.projectId);
+  res.json({ ok: true });
+});
+
+app.put('/tasks/:taskId', (req, res) => {
+  const t = db.prepare('SELECT * FROM tasks WHERE id=?').get(req.params.taskId);
+  if (!t) return res.status(404).json({ error: 'Task not found' });
+  const next = {
+    ...t,
+    title: req.body.title ?? t.title,
+    status: req.body.status ?? t.status,
+    assignee: req.body.assignee ?? t.assignee,
+    start_date: req.body.start_date ?? t.start_date,
+    due_date: req.body.due_date ?? t.due_date,
+    depends_on: req.body.depends_on ?? t.depends_on,
+    idle_reason: req.body.idle_reason ?? t.idle_reason,
+    updated_at: now()
+  };
+  db.prepare('UPDATE tasks SET title=@title,status=@status,assignee=@assignee,start_date=@start_date,due_date=@due_date,depends_on=@depends_on,idle_reason=@idle_reason,updated_at=@updated_at WHERE id=@id').run(next);
+  res.json(next);
+});
+
+app.delete('/tasks/:taskId', (req, res) => {
+  db.prepare('DELETE FROM subtasks WHERE task_id=?').run(req.params.taskId);
+  db.prepare('DELETE FROM comments WHERE task_id=?').run(req.params.taskId);
+  db.prepare('DELETE FROM tasks WHERE id=?').run(req.params.taskId);
+  res.json({ ok: true });
+});
+
+app.get('/agents/overview', (_req, res) => {
+  const resources = db.prepare('SELECT * FROM resources ORDER BY name').all();
+  const out = resources.map(r => {
+    const tasks = db.prepare('SELECT * FROM tasks WHERE assignee=? ORDER BY updated_at DESC').all(r.name);
+    const inProgress = tasks.filter(t => t.status === 'in_progress');
+    const todo = tasks.filter(t => t.status === 'todo');
+    const done = tasks.filter(t => t.status === 'done');
+    let idle_reason = null;
+    if (inProgress.length === 0) {
+      if (todo.length > 0) idle_reason = 'Has pending tasks, waiting for auto-pick/start';
+      else idle_reason = 'No assigned tasks';
+    }
+    return { ...r, tasks, stats: { total: tasks.length, in_progress: inProgress.length, todo: todo.length, done: done.length }, idle_reason };
+  });
+  res.json(out);
+});
+
+app.post('/agents/auto-pick', (_req, res) => {
+  const agents = db.prepare("SELECT name FROM resources WHERE type='agent'").all();
+  let picked = 0;
+  for (const a of agents) {
+    const active = db.prepare("SELECT id FROM tasks WHERE assignee=? AND status='in_progress' LIMIT 1").get(a.name);
+    if (active) continue;
+    const next = db.prepare("SELECT id FROM tasks WHERE assignee=? AND status='todo' ORDER BY created_at ASC LIMIT 1").get(a.name);
+    if (next) {
+      db.prepare("UPDATE tasks SET status='in_progress', start_date=?, idle_reason=NULL, updated_at=? WHERE id=?").run(now(), now(), next.id);
+      picked += 1;
+    }
+  }
+  res.json({ ok: true, picked });
 });
 
 const port = process.env.PM_PORT || 8787;

@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS projects (
   owner TEXT,
   description TEXT,
   scope_summary TEXT,
+  dependencies TEXT,
   ceo_owner TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
@@ -19,6 +20,10 @@ CREATE TABLE IF NOT EXISTS tasks (
   approved INTEGER NOT NULL DEFAULT 0,
   github_issue_number INTEGER,
   github_issue_url TEXT,
+  start_date TEXT,
+  due_date TEXT,
+  depends_on TEXT,
+  idle_reason TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   FOREIGN KEY(project_id) REFERENCES projects(id)
