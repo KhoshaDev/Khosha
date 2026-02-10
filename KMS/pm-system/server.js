@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createIssue, listIssues } from './github.js';
 import { createClient } from '@libsql/client';
+import { execFileSync } from 'child_process';
 
 const app = express();
 app.use(cors());
@@ -605,6 +606,45 @@ app.post('/tasks/auto-distribute', (_req, res) => {
   }
 
   res.json({ ok: true, reassigned, blockedUpdated });
+});
+
+const TEAM_AGENT_SESSIONS = {
+  keith: { name: 'Keith (CEO)', sessionId: 'agent:main:main' },
+  vivaan: { name: 'Vivaan (Delivery Director)', sessionId: 'c31b9f6c-f077-46e9-a808-5d14d689bf9c' },
+  aarya: { name: 'Aarya (Client Success)', sessionId: '84caa814-8059-4228-8dee-8103224beeb7' },
+  ira: { name: 'Ira (Design Lead)', sessionId: 'ff041717-fa3d-4702-94ea-00af779f7e71' },
+  dev: { name: 'Dev (Engineering Lead)', sessionId: 'd29a62b2-8201-483f-8b03-32d94838c03a' },
+  tara: { name: 'Tara (QA & Reliability)', sessionId: '739fc261-b154-4838-88c0-02867900d6b6' },
+  kabir: { name: 'Kabir (Growth & Partnerships)', sessionId: '45897f8e-1559-4479-97af-443b1a06c023' },
+  nisha: { name: 'Nisha (Finance & Ops)', sessionId: 'a12d8647-70bf-420d-81ac-2ed2512ea5c2' },
+  om: { name: 'Om (Knowledge & Compliance)', sessionId: '4847ebe6-0b79-48da-955b-a28ee7e7ef50' }
+};
+
+app.get('/teamchat/agents', (_req, res) => {
+  const agents = Object.entries(TEAM_AGENT_SESSIONS).map(([key, value]) => ({ key, name: value.name }));
+  res.json({ agents });
+});
+
+app.post('/teamchat/send', (req, res) => {
+  try {
+    const agentKey = String(req.body?.agent || '').toLowerCase();
+    const message = String(req.body?.message || '').trim();
+    if (!agentKey || !TEAM_AGENT_SESSIONS[agentKey]) return res.status(400).json({ error: 'Unknown agent' });
+    if (!message) return res.status(400).json({ error: 'Message is required' });
+
+    const sessionId = TEAM_AGENT_SESSIONS[agentKey].sessionId;
+    const out = execFileSync('openclaw', ['agent', '--session-id', sessionId, '--message', message, '--json'], {
+      encoding: 'utf8',
+      timeout: 120000
+    });
+
+    const parsed = JSON.parse(out || '{}');
+    const payloads = parsed?.result?.payloads || [];
+    const text = payloads.map((p) => p?.text).filter(Boolean).join('\n\n') || 'No response.';
+    res.json({ ok: true, agent: TEAM_AGENT_SESSIONS[agentKey].name, reply: text });
+  } catch (err) {
+    res.status(500).json({ error: err?.message || 'Failed to contact agent' });
+  }
 });
 
 const port = process.env.PM_PORT || 8787;
