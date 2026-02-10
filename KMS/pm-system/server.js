@@ -24,7 +24,7 @@ const tursoToken = process.env.TURSO_AUTH_TOKEN;
 const turso = (tursoUrl && tursoToken) ? createClient({ url: tursoUrl, authToken: tursoToken }) : null;
 
 const TABLE_SYNC_PLAN = {
-  projects: ['id', 'name', 'status', 'owner', 'created_at', 'updated_at'],
+  projects: ['id', 'name', 'status', 'owner', 'description', 'scope_summary', 'ceo_owner', 'created_at', 'updated_at'],
   tasks: ['id', 'project_id', 'title', 'status', 'assignee', 'approved', 'github_issue_number', 'github_issue_url', 'created_at', 'updated_at'],
   subtasks: ['id', 'task_id', 'title', 'done', 'created_at'],
   comments: ['id', 'project_id', 'task_id', 'author', 'body', 'created_at'],
@@ -46,6 +46,18 @@ async function ensureTursoSchemaAndSeed() {
 
     for (const stmt of statements) {
       await turso.execute(stmt);
+    }
+
+    const tursoMigrations = [
+      'ALTER TABLE projects ADD COLUMN description TEXT',
+      'ALTER TABLE projects ADD COLUMN scope_summary TEXT',
+      "ALTER TABLE projects ADD COLUMN ceo_owner TEXT DEFAULT 'Keith Anderson'",
+      'ALTER TABLE tasks ADD COLUMN github_issue_number INTEGER',
+      'ALTER TABLE tasks ADD COLUMN github_issue_url TEXT'
+    ];
+
+    for (const mig of tursoMigrations) {
+      try { await turso.execute(mig); } catch (_) { /* ignore already-exists */ }
     }
 
     for (const [table, cols] of Object.entries(TABLE_SYNC_PLAN)) {
@@ -74,6 +86,17 @@ if (!taskColumns.includes('github_issue_number')) {
 }
 if (!taskColumns.includes('github_issue_url')) {
   db.exec('ALTER TABLE tasks ADD COLUMN github_issue_url TEXT');
+}
+
+const projectColumns = db.prepare('PRAGMA table_info(projects)').all().map((c) => c.name);
+if (!projectColumns.includes('description')) {
+  db.exec('ALTER TABLE projects ADD COLUMN description TEXT');
+}
+if (!projectColumns.includes('scope_summary')) {
+  db.exec('ALTER TABLE projects ADD COLUMN scope_summary TEXT');
+}
+if (!projectColumns.includes('ceo_owner')) {
+  db.exec("ALTER TABLE projects ADD COLUMN ceo_owner TEXT DEFAULT 'Keith Anderson'");
 }
 
 const now = () => new Date().toISOString();
@@ -111,9 +134,66 @@ app.post('/turso/sync', async (_req, res) => {
 
 app.get('/projects', (_req, res) => res.json(db.prepare('SELECT * FROM projects ORDER BY updated_at DESC').all()));
 app.post('/projects', (req, res) => {
-  const x = { id: id('proj'), name: req.body.name, status: req.body.status || 'planning', owner: req.body.owner || 'Keith Anderson', created_at: now(), updated_at: now() };
-  db.prepare('INSERT INTO projects VALUES (@id,@name,@status,@owner,@created_at,@updated_at)').run(x);
+  const x = {
+    id: id('proj'),
+    name: req.body.name,
+    status: req.body.status || 'planning',
+    owner: req.body.owner || 'Keith Anderson',
+    description: req.body.description || null,
+    scope_summary: req.body.scope_summary || null,
+    ceo_owner: req.body.ceo_owner || 'Keith Anderson',
+    created_at: now(),
+    updated_at: now()
+  };
+  db.prepare('INSERT INTO projects (id,name,status,owner,description,scope_summary,ceo_owner,created_at,updated_at) VALUES (@id,@name,@status,@owner,@description,@scope_summary,@ceo_owner,@created_at,@updated_at)').run(x);
   res.json(x);
+});
+
+app.post('/projects/:projectId/bootstrap-ceo', (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id=?').get(req.params.projectId);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+
+  const body = req.body || {};
+  const scope = body.scope_summary || project.scope_summary || 'MVP delivery with clear milestones';
+  const owner = body.ceo_owner || project.ceo_owner || 'Keith Anderson';
+
+  db.prepare('UPDATE projects SET scope_summary=?, ceo_owner=?, updated_at=? WHERE id=?').run(scope, owner, now(), project.id);
+
+  const taskTemplates = [
+    `CEO kickoff: define success metrics for ${project.name}`,
+    `Research & planning: break ${project.name} into phases`,
+    `Build phase: implement MVP scoped to "${scope}"`,
+    `QA & integration: verify modules and data connections`,
+    `Launch & review: deploy and collect feedback`
+  ];
+
+  const insertTask = db.prepare(`INSERT INTO tasks (
+    id, project_id, title, status, assignee, approved,
+    github_issue_number, github_issue_url, created_at, updated_at
+  ) VALUES (
+    @id, @project_id, @title, @status, @assignee, @approved,
+    @github_issue_number, @github_issue_url, @created_at, @updated_at
+  )`);
+
+  const created = [];
+  for (const title of taskTemplates) {
+    const t = {
+      id: id('task'),
+      project_id: project.id,
+      title,
+      status: 'todo',
+      assignee: owner,
+      approved: 0,
+      github_issue_number: null,
+      github_issue_url: null,
+      created_at: now(),
+      updated_at: now()
+    };
+    insertTask.run(t);
+    created.push(t);
+  }
+
+  res.json({ ok: true, project_id: project.id, ceo_owner: owner, scope_summary: scope, created_tasks: created });
 });
 
 app.get('/projects/:projectId/tasks', (req, res) => res.json(db.prepare('SELECT * FROM tasks WHERE project_id=? ORDER BY updated_at DESC').all(req.params.projectId)));

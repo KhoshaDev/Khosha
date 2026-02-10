@@ -4,6 +4,9 @@ CREATE TABLE IF NOT EXISTS projects (
   name TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'planning',
   owner TEXT,
+  description TEXT,
+  scope_summary TEXT,
+  ceo_owner TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
