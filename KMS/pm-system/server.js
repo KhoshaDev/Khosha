@@ -23,6 +23,50 @@ const tursoUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_URL;
 const tursoToken = process.env.TURSO_AUTH_TOKEN;
 const turso = (tursoUrl && tursoToken) ? createClient({ url: tursoUrl, authToken: tursoToken }) : null;
 
+const TABLE_SYNC_PLAN = {
+  projects: ['id', 'name', 'status', 'owner', 'created_at', 'updated_at'],
+  tasks: ['id', 'project_id', 'title', 'status', 'assignee', 'approved', 'github_issue_number', 'github_issue_url', 'created_at', 'updated_at'],
+  subtasks: ['id', 'task_id', 'title', 'done', 'created_at'],
+  comments: ['id', 'project_id', 'task_id', 'author', 'body', 'created_at'],
+  chats: ['id', 'agent', 'message', 'created_at'],
+  resources: ['id', 'name', 'role', 'type', 'start_date', 'job_description'],
+  documents: ['id', 'title', 'path', 'created_at'],
+  credentials_registry: ['id', 'key_alias', 'status', 'location'],
+  integrations_github: ['id', 'repo', 'owner', 'token_env_var', 'enabled']
+};
+
+async function ensureTursoSchemaAndSeed() {
+  if (!turso) return;
+  try {
+    const rawSchema = fs.readFileSync(path.resolve(__dirname, 'schema.sql'), 'utf8');
+    const statements = rawSchema
+      .split(';')
+      .map((s) => s.trim())
+      .filter((s) => s && !/^PRAGMA\s+/i.test(s));
+
+    for (const stmt of statements) {
+      await turso.execute(stmt);
+    }
+
+    for (const [table, cols] of Object.entries(TABLE_SYNC_PLAN)) {
+      const rows = db.prepare(`SELECT ${cols.join(', ')} FROM ${table}`).all();
+      if (!rows.length) continue;
+      const placeholders = cols.map(() => '?').join(', ');
+      const upsertSql = `INSERT OR REPLACE INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`;
+      for (const row of rows) {
+        const args = cols.map((c) => row[c]);
+        await turso.execute({ sql: upsertSql, args });
+      }
+    }
+
+    console.log('[Turso] schema ensured and seed sync complete');
+  } catch (err) {
+    console.error('[Turso] bootstrap failed:', err?.message || err);
+  }
+}
+
+await ensureTursoSchemaAndSeed();
+
 // Lightweight migrations for existing DBs.
 const taskColumns = db.prepare('PRAGMA table_info(tasks)').all().map((c) => c.name);
 if (!taskColumns.includes('github_issue_number')) {
@@ -50,6 +94,16 @@ app.get('/turso/health', async (_req, res) => {
     if (!turso) return res.status(400).json({ ok: false, error: 'Turso not configured (TURSO_DATABASE_URL/TURSO_AUTH_TOKEN)' });
     const ping = await turso.execute('SELECT 1 as ok');
     return res.json({ ok: true, rows: ping.rows });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+app.post('/turso/sync', async (_req, res) => {
+  try {
+    if (!turso) return res.status(400).json({ ok: false, error: 'Turso not configured (TURSO_DATABASE_URL/TURSO_AUTH_TOKEN)' });
+    await ensureTursoSchemaAndSeed();
+    return res.json({ ok: true, message: 'Turso schema + seed sync completed' });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });
   }
