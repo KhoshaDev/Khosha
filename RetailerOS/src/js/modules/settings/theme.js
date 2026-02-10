@@ -7,10 +7,10 @@ export function renderSettingsTheme() {
         display_mode: s.display_mode ?? localStorage.getItem('retaileros_theme') ?? 'light',
         accent_color: s.accent_color ?? localStorage.getItem('retaileros_accent') ?? 'slate',
         layout_density: s.layout_density ?? localStorage.getItem('retaileros_density') ?? 'comfortable',
-        font_size: s.font_size ?? 100,
+        font_size: s.font_size ?? parseInt(localStorage.getItem('retaileros_font_size') || '100'),
         sidebar_collapsed: s.sidebar_collapsed ?? false,
         show_app_labels: s.show_app_labels ?? true,
-        animations_enabled: s.animations_enabled ?? true,
+        animations_enabled: s.animations_enabled ?? (localStorage.getItem('retaileros_animations') !== 'false'),
     };
 
     const accents = [
@@ -47,6 +47,10 @@ export function renderSettingsTheme() {
         if (data.display_mode) localStorage.setItem('retaileros_theme', data.display_mode);
         if (data.accent_color) localStorage.setItem('retaileros_accent', data.accent_color);
         if (data.layout_density) localStorage.setItem('retaileros_density', data.layout_density);
+        if (data.font_size) localStorage.setItem('retaileros_font_size', data.font_size);
+        if (data.animations_enabled !== undefined) localStorage.setItem('retaileros_animations', data.animations_enabled);
+        // Apply theme live
+        if (window.applyTheme) window.applyTheme();
 
         // Write to DB for cross-device sync
         try {

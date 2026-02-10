@@ -26,6 +26,9 @@ import './utils/wati.js';
 // Initialize toast notification system
 import './utils/toast.js';
 
+// Initialize theme system
+import './utils/theme.js';
+
 // --- Router / Layout Logic ---
 
 function renderAppPrimary() {
