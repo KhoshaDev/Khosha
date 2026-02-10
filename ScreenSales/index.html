@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Screen Sales Desk</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Screen Sales Desk</h1>
+      <p>Quick one-page tracker for orders, leads, and sales totals.</p>
+    </header>
+
+    <section class="cards" id="kpis"></section>
+
+    <section class="panel">
+      <h2>Add Order / Lead</h2>
+      <form id="orderForm" class="grid">
+        <input required id="customer" placeholder="Customer name" />
+        <input id="phone" placeholder="Phone" />
+        <input id="screenType" placeholder="Screen type/model" />
+        <input type="number" min="1" id="qty" placeholder="Qty" value="1" />
+        <input type="number" min="0" step="0.01" id="unitPrice" placeholder="Unit price" />
+        <select id="stage">
+          <option value="lead">Lead</option>
+          <option value="quoted">Quoted</option>
+          <option value="ordered">Ordered</option>
+          <option value="delivered">Delivered</option>
+        </select>
+        <select id="payment">
+          <option value="unpaid">Unpaid</option>
+          <option value="partial">Partial</option>
+          <option value="paid">Paid</option>
+        </select>
+        <input id="notes" placeholder="Notes" />
+        <button type="submit">Save Entry</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <h2>Orders & Leads</h2>
+        <input id="search" placeholder="Search customer / model" />
+      </div>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Customer</th><th>Model</th><th>Qty</th><th>Unit</th><th>Total</th><th>Stage</th><th>Payment</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>
