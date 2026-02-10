@@ -1,6 +1,7 @@
 (function(){
   const menu = [
     ['index.html','🏠 Home'],
+    ['upgrade.html','🎯 Redesign Live'],
     ['projects.html','🚀 Projects'],
     ['tasks.html','✅ Tasks'],
     ['kanban.html','🧩 Kanban'],
