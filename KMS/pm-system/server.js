@@ -3,6 +3,7 @@ import cors from 'cors';
 import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { createIssue, listIssues } from './github.js';
 import { createClient } from '@libsql/client';
 
@@ -10,10 +11,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const dataDir = path.resolve('ceo-agent/pm-system/data');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const dataDir = path.resolve(__dirname, 'data');
 fs.mkdirSync(dataDir, { recursive: true });
 const db = new Database(path.join(dataDir, 'keith_pm.db'));
-db.exec(fs.readFileSync(path.resolve('ceo-agent/pm-system/schema.sql'), 'utf8'));
+db.exec(fs.readFileSync(path.resolve(__dirname, 'schema.sql'), 'utf8'));
 
 const tursoUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_URL;
 const tursoToken = process.env.TURSO_AUTH_TOKEN;

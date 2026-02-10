@@ -1,4 +1,4 @@
-const API='http://127.0.0.1:8787';
+const API='/api';
 const KEY='keith_agent_chat_v1';
 const load=()=>JSON.parse(localStorage.getItem(KEY)||'[]');
 const save=(v)=>localStorage.setItem(KEY,JSON.stringify(v));

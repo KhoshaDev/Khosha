@@ -1,4 +1,4 @@
-const API='http://127.0.0.1:8787';
+const API='/api';
 const KEY='keith_projects_v1';
 async function fetchProjects(){ try { const r=await fetch(`${API}/projects`); if(!r.ok) throw 1; return await r.json(); } catch { return JSON.parse(localStorage.getItem(KEY)||'[]'); } }
 function saveLocal(items){ localStorage.setItem(KEY, JSON.stringify(items)); }
