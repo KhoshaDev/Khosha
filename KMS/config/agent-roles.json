@@ -1,0 +1,34 @@
+{
+  "ceoAgent": {
+    "name": "Keith Anderson",
+    "responsibilities": [
+      "prioritize incoming tasks",
+      "assign to specialist agents",
+      "enforce model routing policy",
+      "monitor deadlines and blockers",
+      "generate daily brief"
+    ]
+  },
+  "specialists": [
+    {
+      "name": "Ops-Agent",
+      "scope": ["task tracking", "SOP follow-through", "reminders", "owner updates"]
+    },
+    {
+      "name": "Sales-Invoice-Agent",
+      "scope": ["invoice generation", "payment follow-ups", "receivables status"]
+    },
+    {
+      "name": "Comms-Agent",
+      "scope": ["whatsapp drafts", "client follow-up drafts", "tone-safe rewrites"]
+    },
+    {
+      "name": "Growth-Agent",
+      "scope": ["website service offers", "digital marketing ideas", "lead list prep"]
+    },
+    {
+      "name": "RetailerOS-Agent",
+      "scope": ["product roadmap notes", "feature prioritization", "feedback synthesis"]
+    }
+  ]
+}

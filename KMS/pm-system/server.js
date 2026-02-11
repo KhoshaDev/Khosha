@@ -1,0 +1,750 @@
+import express from 'express';
+import cors from 'cors';
+import Database from 'better-sqlite3';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createIssue, listIssues } from './github.js';
+import { createClient } from '@libsql/client';
+import { execFileSync } from 'child_process';
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const dataDir = path.resolve(__dirname, 'data');
+fs.mkdirSync(dataDir, { recursive: true });
+const db = new Database(path.join(dataDir, 'keith_pm.db'));
+db.exec(fs.readFileSync(path.resolve(__dirname, 'schema.sql'), 'utf8'));
+
+const tursoUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_URL;
+const tursoToken = process.env.TURSO_AUTH_TOKEN;
+const turso = (tursoUrl && tursoToken) ? createClient({ url: tursoUrl, authToken: tursoToken }) : null;
+
+const TABLE_SYNC_PLAN = {
+  projects: ['id', 'name', 'status', 'owner', 'description', 'scope_summary', 'dependencies', 'ceo_owner', 'created_at', 'updated_at'],
+  tasks: ['id', 'project_id', 'title', 'status', 'assignee', 'approved', 'github_issue_number', 'github_issue_url', 'start_date', 'due_date', 'depends_on', 'idle_reason', 'created_at', 'updated_at'],
+  subtasks: ['id', 'task_id', 'title', 'done', 'created_at'],
+  comments: ['id', 'project_id', 'task_id', 'author', 'body', 'created_at'],
+  chats: ['id', 'agent', 'message', 'created_at'],
+  resources: ['id', 'name', 'role', 'type', 'start_date', 'job_description'],
+  documents: ['id', 'title', 'path', 'created_at'],
+  credentials_registry: ['id', 'key_alias', 'status', 'location'],
+  integrations_github: ['id', 'repo', 'owner', 'token_env_var', 'enabled'],
+  agent_registry: ['id', 'agent_key', 'name', 'role', 'session_key', 'session_id', 'status', 'created_at', 'updated_at'],
+  agent_timeline: ['id', 'agent_key', 'event_type', 'message', 'created_at']
+};
+
+async function ensureTursoSchemaAndSeed() {
+  if (!turso) return;
+  try {
+    const rawSchema = fs.readFileSync(path.resolve(__dirname, 'schema.sql'), 'utf8');
+    const statements = rawSchema
+      .split(';')
+      .map((s) => s.trim())
+      .filter((s) => s && !/^PRAGMA\s+/i.test(s));
+
+    for (const stmt of statements) {
+      await turso.execute(stmt);
+    }
+
+    const tursoMigrations = [
+      'ALTER TABLE projects ADD COLUMN description TEXT',
+      'ALTER TABLE projects ADD COLUMN scope_summary TEXT',
+      'ALTER TABLE projects ADD COLUMN dependencies TEXT',
+      "ALTER TABLE projects ADD COLUMN ceo_owner TEXT DEFAULT 'Keith Anderson'",
+      'ALTER TABLE tasks ADD COLUMN github_issue_number INTEGER',
+      'ALTER TABLE tasks ADD COLUMN github_issue_url TEXT',
+      'ALTER TABLE tasks ADD COLUMN start_date TEXT',
+      'ALTER TABLE tasks ADD COLUMN due_date TEXT',
+      'ALTER TABLE tasks ADD COLUMN depends_on TEXT',
+      'ALTER TABLE tasks ADD COLUMN idle_reason TEXT'
+    ];
+
+    for (const mig of tursoMigrations) {
+      try { await turso.execute(mig); } catch (_) { /* ignore already-exists */ }
+    }
+
+    for (const [table, cols] of Object.entries(TABLE_SYNC_PLAN)) {
+      const rows = db.prepare(`SELECT ${cols.join(', ')} FROM ${table}`).all();
+      if (!rows.length) continue;
+      const placeholders = cols.map(() => '?').join(', ');
+      const upsertSql = `INSERT OR REPLACE INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`;
+      for (const row of rows) {
+        const args = cols.map((c) => row[c]);
+        await turso.execute({ sql: upsertSql, args });
+      }
+    }
+
+    console.log('[Turso] schema ensured and seed sync complete');
+  } catch (err) {
+    console.error('[Turso] bootstrap failed:', err?.message || err);
+  }
+}
+
+await ensureTursoSchemaAndSeed();
+
+// Lightweight migrations for existing DBs.
+const taskColumns = db.prepare('PRAGMA table_info(tasks)').all().map((c) => c.name);
+if (!taskColumns.includes('github_issue_number')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN github_issue_number INTEGER');
+}
+if (!taskColumns.includes('github_issue_url')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN github_issue_url TEXT');
+}
+if (!taskColumns.includes('start_date')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN start_date TEXT');
+}
+if (!taskColumns.includes('due_date')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN due_date TEXT');
+}
+if (!taskColumns.includes('depends_on')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN depends_on TEXT');
+}
+if (!taskColumns.includes('idle_reason')) {
+  db.exec('ALTER TABLE tasks ADD COLUMN idle_reason TEXT');
+}
+
+const projectColumns = db.prepare('PRAGMA table_info(projects)').all().map((c) => c.name);
+if (!projectColumns.includes('description')) {
+  db.exec('ALTER TABLE projects ADD COLUMN description TEXT');
+}
+if (!projectColumns.includes('scope_summary')) {
+  db.exec('ALTER TABLE projects ADD COLUMN scope_summary TEXT');
+}
+if (!projectColumns.includes('dependencies')) {
+  db.exec('ALTER TABLE projects ADD COLUMN dependencies TEXT');
+}
+if (!projectColumns.includes('ceo_owner')) {
+  db.exec("ALTER TABLE projects ADD COLUMN ceo_owner TEXT DEFAULT 'Keith Anderson'");
+}
+
+const now = () => new Date().toISOString();
+const id = (p) => `${p}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+const TEAM_AGENT_BOOTSTRAP = {
+  keith: { name: 'Keith (CEO)', role: 'CEO Agent', session_key: 'agent:main:main', session_id: 'agent:main:main' },
+  vivaan: { name: 'Vivaan (Delivery Director)', role: 'Delivery Director Agent', session_key: 'agent:main:subagent:d8e6f33f-a717-46fa-bdc4-93338294dabf', session_id: 'c31b9f6c-f077-46e9-a808-5d14d689bf9c' },
+  aarya: { name: 'Aarya (Client Success)', role: 'Client Success Manager Agent', session_key: 'agent:main:subagent:53b59159-13a8-4609-aa03-28a81539a593', session_id: '84caa814-8059-4228-8dee-8103224beeb7' },
+  ira: { name: 'Ira (Design Lead)', role: 'Design Lead Agent', session_key: 'agent:main:subagent:491c98e1-9ed4-461e-8781-629951ae9640', session_id: 'ff041717-fa3d-4702-94ea-00af779f7e71' },
+  dev: { name: 'Dev (Engineering Lead)', role: 'Engineering Lead Agent', session_key: 'agent:main:subagent:f713cdd7-5818-49c7-ae93-8c911b6b719e', session_id: 'd29a62b2-8201-483f-8b03-32d94838c03a' },
+  tara: { name: 'Tara (QA & Reliability)', role: 'QA & Reliability Agent', session_key: 'agent:main:subagent:53aa796f-1ac7-4435-bd9c-0ca012ec3ef5', session_id: '739fc261-b154-4838-88c0-02867900d6b6' },
+  kabir: { name: 'Kabir (Growth & Partnerships)', role: 'Growth & Partnerships Agent', session_key: 'agent:main:subagent:37e5c6c6-d857-4e77-95c4-5ee6272e1f7b', session_id: '45897f8e-1559-4479-97af-443b1a06c023' },
+  nisha: { name: 'Nisha (Finance & Ops)', role: 'Finance & Ops Controller Agent', session_key: 'agent:main:subagent:8a61e341-2e2b-4161-b5e9-745b65cb341e', session_id: 'a12d8647-70bf-420d-81ac-2ed2512ea5c2' },
+  om: { name: 'Om (Knowledge & Compliance)', role: 'Knowledge & Compliance Agent', session_key: 'agent:main:subagent:1540c8dc-3c23-442e-b53d-1effeb87e7ba', session_id: '4847ebe6-0b79-48da-955b-a28ee7e7ef50' }
+};
+
+function ensureAgentRegistrySeed() {
+  for (const [agent_key, data] of Object.entries(TEAM_AGENT_BOOTSTRAP)) {
+    const existing = db.prepare('SELECT id FROM agent_registry WHERE agent_key=?').get(agent_key);
+    if (!existing) {
+      db.prepare('INSERT INTO agent_registry (id, agent_key, name, role, session_key, session_id, status, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)')
+        .run(id('areg'), agent_key, data.name, data.role, data.session_key, data.session_id, 'live', now(), now());
+      db.prepare('INSERT INTO agent_timeline (id, agent_key, event_type, message, created_at) VALUES (?,?,?,?,?)')
+        .run(id('atl'), agent_key, 'created', `Agent ${data.name} registered`, now());
+    }
+  }
+}
+ensureAgentRegistrySeed();
+
+function getGithubConfig() {
+  return db.prepare('SELECT * FROM integrations_github WHERE enabled=1 ORDER BY rowid DESC LIMIT 1').get();
+}
+
+function keywordSet(text) {
+  return new Set((text || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
+}
+
+function suggestAssigneeByHeuristic(task, resources, taskById = new Map()) {
+  if (!resources?.length) return null;
+
+  if (task.depends_on) {
+    const dep = taskById.get(task.depends_on);
+    if (dep?.assignee) return dep.assignee;
+  }
+
+  const text = `${task.title || ''} ${task.idle_reason || ''}`.toLowerCase();
+  const textKeywords = keywordSet(text);
+  let best = null;
+
+  for (const resource of resources) {
+    const roleText = `${resource.role || ''} ${resource.job_description || ''} ${resource.name || ''}`.toLowerCase();
+    const roleKeywords = keywordSet(roleText);
+    let score = 0;
+
+    for (const kw of roleKeywords) {
+      if (textKeywords.has(kw)) score += 1;
+    }
+
+    if ((resource.type || '').toLowerCase() === 'agent') score += 1;
+
+    if (!best || score > best.score) best = { name: resource.name, score };
+  }
+
+  if (!best || best.score <= 0) {
+    const firstAgent = resources.find((r) => (r.type || '').toLowerCase() === 'agent');
+    return firstAgent?.name || resources[0]?.name || null;
+  }
+
+  return best.name;
+}
+
+app.get('/health', (_req, res) => res.json({ ok: true, tursoConfigured: Boolean(turso) }));
+
+app.get('/turso/health', async (_req, res) => {
+  try {
+    if (!turso) return res.status(400).json({ ok: false, error: 'Turso not configured (TURSO_DATABASE_URL/TURSO_AUTH_TOKEN)' });
+    const ping = await turso.execute('SELECT 1 as ok');
+    return res.json({ ok: true, rows: ping.rows });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+app.post('/turso/sync', async (_req, res) => {
+  try {
+    if (!turso) return res.status(400).json({ ok: false, error: 'Turso not configured (TURSO_DATABASE_URL/TURSO_AUTH_TOKEN)' });
+    await ensureTursoSchemaAndSeed();
+    return res.json({ ok: true, message: 'Turso schema + seed sync completed' });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+app.get('/projects', (_req, res) => res.json(db.prepare('SELECT * FROM projects ORDER BY updated_at DESC').all()));
+app.post('/projects', (req, res) => {
+  const x = {
+    id: id('proj'),
+    name: req.body.name,
+    status: req.body.status || 'planning',
+    owner: req.body.owner || 'Keith Anderson',
+    description: req.body.description || null,
+    scope_summary: req.body.scope_summary || null,
+    dependencies: req.body.dependencies || null,
+    ceo_owner: req.body.ceo_owner || 'Keith Anderson',
+    created_at: now(),
+    updated_at: now()
+  };
+  db.prepare('INSERT INTO projects (id,name,status,owner,description,scope_summary,dependencies,ceo_owner,created_at,updated_at) VALUES (@id,@name,@status,@owner,@description,@scope_summary,@dependencies,@ceo_owner,@created_at,@updated_at)').run(x);
+  res.json(x);
+});
+
+app.post('/projects/:projectId/bootstrap-ceo', (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id=?').get(req.params.projectId);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+
+  const body = req.body || {};
+  const scope = body.scope_summary || project.scope_summary || 'MVP delivery with clear milestones';
+  const owner = body.ceo_owner || project.ceo_owner || 'Keith Anderson';
+
+  db.prepare('UPDATE projects SET scope_summary=?, ceo_owner=?, updated_at=? WHERE id=?').run(scope, owner, now(), project.id);
+
+  const taskTemplates = [
+    `CEO kickoff: define success metrics for ${project.name}`,
+    `Research & planning: break ${project.name} into phases`,
+    `Build phase: implement MVP scoped to "${scope}"`,
+    `QA & integration: verify modules and data connections`,
+    `Launch & review: deploy and collect feedback`
+  ];
+
+  const insertTask = db.prepare(`INSERT INTO tasks (
+    id, project_id, title, status, assignee, approved,
+    github_issue_number, github_issue_url, start_date, due_date, depends_on, idle_reason, created_at, updated_at
+  ) VALUES (
+    @id, @project_id, @title, @status, @assignee, @approved,
+    @github_issue_number, @github_issue_url, @start_date, @due_date, @depends_on, @idle_reason, @created_at, @updated_at
+  )`);
+
+  const created = [];
+  for (const title of taskTemplates) {
+    const t = {
+      id: id('task'),
+      project_id: project.id,
+      title,
+      status: 'todo',
+      assignee: owner,
+      approved: 0,
+      github_issue_number: null,
+      github_issue_url: null,
+      start_date: null,
+      due_date: null,
+      depends_on: null,
+      idle_reason: null,
+      created_at: now(),
+      updated_at: now()
+    };
+    insertTask.run(t);
+    created.push(t);
+  }
+
+  res.json({ ok: true, project_id: project.id, ceo_owner: owner, scope_summary: scope, created_tasks: created });
+});
+
+app.get('/projects/:projectId/tasks', (req, res) => res.json(db.prepare('SELECT * FROM tasks WHERE project_id=? ORDER BY updated_at DESC').all(req.params.projectId)));
+app.post('/projects/:projectId/tasks', (req, res) => {
+  const resources = db.prepare('SELECT * FROM resources').all();
+  const taskById = new Map(db.prepare('SELECT * FROM tasks').all().map((x) => [x.id, x]));
+
+  const draft = {
+    id: id('task'),
+    project_id: req.params.projectId,
+    title: req.body.title,
+    status: req.body.status || 'todo',
+    assignee: req.body.assignee || null,
+    approved: 0,
+    github_issue_number: null,
+    github_issue_url: null,
+    start_date: req.body.start_date || null,
+    due_date: req.body.due_date || null,
+    depends_on: req.body.depends_on || null,
+    idle_reason: req.body.idle_reason || null,
+    created_at: now(),
+    updated_at: now()
+  };
+
+  const suggested = suggestAssigneeByHeuristic(draft, resources, taskById);
+  const t = { ...draft, assignee: draft.assignee || suggested };
+  db.prepare(`INSERT INTO tasks (
+    id, project_id, title, status, assignee, approved,
+    github_issue_number, github_issue_url, start_date, due_date, depends_on, idle_reason, created_at, updated_at
+  ) VALUES (
+    @id, @project_id, @title, @status, @assignee, @approved,
+    @github_issue_number, @github_issue_url, @start_date, @due_date, @depends_on, @idle_reason, @created_at, @updated_at
+  )`).run(t);
+  res.json(t);
+});
+app.post('/tasks/:taskId/approve', (req, res) => {
+  db.prepare('UPDATE tasks SET approved=1, updated_at=? WHERE id=?').run(now(), req.params.taskId);
+  res.json({ ok: true });
+});
+app.post('/tasks/:taskId/assign', (req, res) => {
+  db.prepare('UPDATE tasks SET assignee=?, updated_at=? WHERE id=?').run(req.body.assignee || null, now(), req.params.taskId);
+  res.json({ ok: true });
+});
+app.post('/tasks/:taskId/status', (req, res) => {
+  db.prepare('UPDATE tasks SET status=?, updated_at=? WHERE id=?').run(req.body.status || 'todo', now(), req.params.taskId);
+  res.json({ ok: true });
+});
+
+app.get('/tasks/:taskId/subtasks', (req, res) => res.json(db.prepare('SELECT * FROM subtasks WHERE task_id=?').all(req.params.taskId)));
+app.post('/tasks/:taskId/subtasks', (req, res) => {
+  const s = { id: id('sub'), task_id: req.params.taskId, title: req.body.title, done: 0, created_at: now() };
+  db.prepare('INSERT INTO subtasks VALUES (@id,@task_id,@title,@done,@created_at)').run(s);
+  res.json(s);
+});
+
+app.get('/comments', (req, res) => res.json(db.prepare('SELECT * FROM comments ORDER BY created_at DESC LIMIT 300').all()));
+app.post('/comments', (req, res) => {
+  const c = { id: id('com'), project_id: req.body.project_id || null, task_id: req.body.task_id || null, author: req.body.author || 'Agent', body: req.body.body, created_at: now() };
+  db.prepare('INSERT INTO comments VALUES (@id,@project_id,@task_id,@author,@body,@created_at)').run(c);
+  res.json(c);
+});
+
+app.get('/chat', (req, res) => res.json(db.prepare('SELECT * FROM chats ORDER BY created_at DESC LIMIT 300').all()));
+app.post('/chat', (req, res) => {
+  const c = { id: id('chat'), agent: req.body.agent || 'Keith Anderson', message: req.body.message, created_at: now() };
+  db.prepare('INSERT INTO chats VALUES (@id,@agent,@message,@created_at)').run(c);
+  res.json(c);
+});
+
+app.get('/resources', (_req, res) => res.json(db.prepare('SELECT * FROM resources').all()));
+app.post('/resources', (req, res) => {
+  const r = { id: id('res'), name: req.body.name, role: req.body.role, type: req.body.type || 'agent', start_date: req.body.start_date || null, job_description: req.body.job_description || null };
+  db.prepare('INSERT INTO resources VALUES (@id,@name,@role,@type,@start_date,@job_description)').run(r);
+  res.json(r);
+});
+
+app.get('/documents', (_req, res) => res.json(db.prepare('SELECT * FROM documents').all()));
+app.post('/documents', (req, res) => {
+  const d = { id: id('doc'), title: req.body.title, path: req.body.path, created_at: now() };
+  db.prepare('INSERT INTO documents VALUES (@id,@title,@path,@created_at)').run(d);
+  res.json(d);
+});
+
+app.post('/integrations/github/config', (req, res) => {
+  const { owner, repo, token_env_var } = req.body || {};
+  if (!owner || !repo || !token_env_var) {
+    return res.status(400).json({ error: 'owner, repo, and token_env_var are required' });
+  }
+  db.prepare('UPDATE integrations_github SET enabled=0').run();
+  const cfg = { id: id('gh'), owner, repo, token_env_var, enabled: 1 };
+  db.prepare('INSERT INTO integrations_github (id, owner, repo, token_env_var, enabled) VALUES (@id,@owner,@repo,@token_env_var,@enabled)').run(cfg);
+  return res.json({ ok: true, config: { owner, repo, token_env_var, enabled: 1 } });
+});
+
+app.post('/sync/github/export-approved', async (_req, res) => {
+  try {
+    const cfg = getGithubConfig();
+    if (!cfg) {
+      return res.status(400).json({ error: 'GitHub integration not configured' });
+    }
+
+    const tasks = db.prepare(`SELECT t.*, p.name as project_name
+      FROM tasks t
+      JOIN projects p ON p.id = t.project_id
+      WHERE t.approved=1 AND t.github_issue_number IS NULL
+      ORDER BY t.updated_at DESC`).all();
+
+    const updateStmt = db.prepare('UPDATE tasks SET github_issue_number=?, github_issue_url=?, updated_at=? WHERE id=?');
+    const created = [];
+
+    for (const t of tasks) {
+      const issue = await createIssue({
+        owner: cfg.owner,
+        repo: cfg.repo,
+        tokenEnvVar: cfg.token_env_var,
+        title: t.title,
+        body: `PM Task ID: ${t.id}\nProject: ${t.project_name}\nStatus: ${t.status}`
+      });
+      updateStmt.run(issue.number, issue.html_url, now(), t.id);
+      created.push({ task_id: t.id, issue_number: issue.number, issue_url: issue.html_url });
+    }
+
+    return res.json({ ok: true, exported_count: created.length, created });
+  } catch (error) {
+    return res.status(500).json({ error: String(error.message || error) });
+  }
+});
+
+app.post('/sync/github/import-status', async (_req, res) => {
+  try {
+    const cfg = getGithubConfig();
+    if (!cfg) {
+      return res.status(400).json({ error: 'GitHub integration not configured' });
+    }
+
+    const issues = await listIssues({ owner: cfg.owner, repo: cfg.repo, tokenEnvVar: cfg.token_env_var, state: 'all' });
+    const issueMap = new Map(issues.filter((i) => !i.pull_request).map((i) => [i.number, i]));
+
+    const linkedTasks = db.prepare('SELECT id, status, github_issue_number FROM tasks WHERE github_issue_number IS NOT NULL').all();
+    const updateStatus = db.prepare('UPDATE tasks SET status=?, updated_at=? WHERE id=?');
+    let updatedCount = 0;
+
+    for (const task of linkedTasks) {
+      const issue = issueMap.get(task.github_issue_number);
+      if (!issue) continue;
+      const nextStatus = issue.state === 'closed' ? 'done' : task.status;
+      if (nextStatus !== task.status) {
+        updateStatus.run(nextStatus, now(), task.id);
+        updatedCount += 1;
+      }
+    }
+
+    return res.json({ ok: true, checked: linkedTasks.length, updated: updatedCount });
+  } catch (error) {
+    return res.status(500).json({ error: String(error.message || error) });
+  }
+});
+
+app.post('/tasks/:taskId/suggest-assignee', (req, res) => {
+  const task = db.prepare('SELECT * FROM tasks WHERE id=?').get(req.params.taskId);
+  if (!task) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+
+  const comments = db.prepare('SELECT body FROM comments WHERE task_id=? ORDER BY created_at DESC LIMIT 50').all(task.id);
+  const text = `${task.title} ${(comments || []).map((c) => c.body).join(' ')}`.toLowerCase();
+  const textKeywords = keywordSet(text);
+
+  const resources = db.prepare('SELECT * FROM resources').all();
+  if (!resources.length) {
+    return res.json({ ok: true, suggested_assignee: null, reason: 'No resources available' });
+  }
+
+  let best = null;
+  for (const resource of resources) {
+    const roleText = `${resource.role || ''} ${resource.job_description || ''}`.toLowerCase();
+    const roleKeywords = keywordSet(roleText);
+    let score = 0;
+
+    for (const kw of roleKeywords) {
+      if (textKeywords.has(kw)) score += 1;
+    }
+
+    if (text.includes((resource.name || '').toLowerCase())) score += 2;
+
+    if (!best || score > best.score) {
+      best = { resource, score };
+    }
+  }
+
+  if (!best || best.score === 0) {
+    return res.json({ ok: true, suggested_assignee: null, reason: 'No clear keyword match found' });
+  }
+
+  return res.json({
+    ok: true,
+    task_id: task.id,
+    suggested_assignee: best.resource.name,
+    score: best.score,
+    reason: `Matched task/discussion keywords with role: ${best.resource.role}`
+  });
+});
+
+// ---- KMS v2 operational endpoints ----
+app.get('/dashboard/summary', (_req, res) => {
+  const projects = db.prepare('SELECT COUNT(*) as c FROM projects').get().c;
+  const tasks = db.prepare('SELECT COUNT(*) as c FROM tasks').get().c;
+  const resources = db.prepare("SELECT COUNT(*) as c FROM resources WHERE type='agent'").get().c;
+  const humans = db.prepare("SELECT COUNT(*) as c FROM resources WHERE type='human'").get().c;
+  res.json({ projects, tasks, resources, humans });
+});
+
+app.get('/projects/:projectId/overview', (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id=?').get(req.params.projectId);
+  if (!project) return res.status(404).json({ error: 'Project not found' });
+  const tasks = db.prepare('SELECT * FROM tasks WHERE project_id=? ORDER BY updated_at DESC').all(req.params.projectId);
+  const taskIds = tasks.map(t => t.id);
+  let subtasks = [];
+  if (taskIds.length) {
+    const q = taskIds.map(() => '?').join(',');
+    subtasks = db.prepare(`SELECT * FROM subtasks WHERE task_id IN (${q})`).all(...taskIds);
+  }
+  const people = [...new Set(tasks.map(t => t.assignee).filter(Boolean))];
+  const progress = {
+    total: tasks.length,
+    done: tasks.filter(t => t.status === 'done').length,
+    in_progress: tasks.filter(t => t.status === 'in_progress').length,
+    todo: tasks.filter(t => t.status === 'todo').length,
+    blocked: tasks.filter(t => t.status === 'blocked').length
+  };
+  res.json({ project, tasks, subtasks, people, progress });
+});
+
+app.put('/projects/:projectId', (req, res) => {
+  const p = db.prepare('SELECT * FROM projects WHERE id=?').get(req.params.projectId);
+  if (!p) return res.status(404).json({ error: 'Project not found' });
+  const next = {
+    ...p,
+    name: req.body.name ?? p.name,
+    status: req.body.status ?? p.status,
+    owner: req.body.owner ?? p.owner,
+    description: req.body.description ?? p.description,
+    scope_summary: req.body.scope_summary ?? p.scope_summary,
+    dependencies: req.body.dependencies ?? p.dependencies,
+    ceo_owner: req.body.ceo_owner ?? p.ceo_owner,
+    updated_at: now()
+  };
+  db.prepare('UPDATE projects SET name=@name,status=@status,owner=@owner,description=@description,scope_summary=@scope_summary,dependencies=@dependencies,ceo_owner=@ceo_owner,updated_at=@updated_at WHERE id=@id').run(next);
+  res.json(next);
+});
+
+app.delete('/projects/:projectId', (req, res) => {
+  db.prepare('DELETE FROM subtasks WHERE task_id IN (SELECT id FROM tasks WHERE project_id=?)').run(req.params.projectId);
+  db.prepare('DELETE FROM tasks WHERE project_id=?').run(req.params.projectId);
+  db.prepare('DELETE FROM comments WHERE project_id=?').run(req.params.projectId);
+  db.prepare('DELETE FROM projects WHERE id=?').run(req.params.projectId);
+  res.json({ ok: true });
+});
+
+app.put('/tasks/:taskId', (req, res) => {
+  const t = db.prepare('SELECT * FROM tasks WHERE id=?').get(req.params.taskId);
+  if (!t) return res.status(404).json({ error: 'Task not found' });
+  const next = {
+    ...t,
+    title: req.body.title ?? t.title,
+    status: req.body.status ?? t.status,
+    assignee: req.body.assignee ?? t.assignee,
+    start_date: req.body.start_date ?? t.start_date,
+    due_date: req.body.due_date ?? t.due_date,
+    depends_on: req.body.depends_on ?? t.depends_on,
+    idle_reason: req.body.idle_reason ?? t.idle_reason,
+    updated_at: now()
+  };
+  db.prepare('UPDATE tasks SET title=@title,status=@status,assignee=@assignee,start_date=@start_date,due_date=@due_date,depends_on=@depends_on,idle_reason=@idle_reason,updated_at=@updated_at WHERE id=@id').run(next);
+  res.json(next);
+});
+
+app.delete('/tasks/:taskId', (req, res) => {
+  db.prepare('DELETE FROM subtasks WHERE task_id=?').run(req.params.taskId);
+  db.prepare('DELETE FROM comments WHERE task_id=?').run(req.params.taskId);
+  db.prepare('DELETE FROM tasks WHERE id=?').run(req.params.taskId);
+  res.json({ ok: true });
+});
+
+app.get('/agents/overview', (_req, res) => {
+  const resources = db.prepare('SELECT * FROM resources ORDER BY name').all();
+  const out = resources.map(r => {
+    const tasks = db.prepare('SELECT * FROM tasks WHERE assignee=? ORDER BY updated_at DESC').all(r.name);
+    const inProgress = tasks.filter(t => t.status === 'in_progress');
+    const todo = tasks.filter(t => t.status === 'todo');
+    const done = tasks.filter(t => t.status === 'done');
+    let idle_reason = null;
+    if (inProgress.length === 0) {
+      if (todo.length > 0) idle_reason = 'Has pending tasks, waiting for auto-pick/start';
+      else idle_reason = 'No assigned tasks';
+    }
+    return { ...r, tasks, stats: { total: tasks.length, in_progress: inProgress.length, todo: todo.length, done: done.length }, idle_reason };
+  });
+  res.json(out);
+});
+
+app.post('/agents/auto-pick', (_req, res) => {
+  const agents = db.prepare("SELECT name FROM resources WHERE type='agent'").all();
+  let picked = 0;
+  for (const a of agents) {
+    const active = db.prepare("SELECT id FROM tasks WHERE assignee=? AND status='in_progress' LIMIT 1").get(a.name);
+    if (active) continue;
+    const next = db.prepare("SELECT id FROM tasks WHERE assignee=? AND status='todo' ORDER BY created_at ASC LIMIT 1").get(a.name);
+    if (next) {
+      db.prepare("UPDATE tasks SET status='in_progress', start_date=?, idle_reason=NULL, updated_at=? WHERE id=?").run(now(), now(), next.id);
+      picked += 1;
+    }
+  }
+  res.json({ ok: true, picked });
+});
+
+app.post('/tasks/auto-distribute', (_req, res) => {
+  const resources = db.prepare('SELECT * FROM resources').all();
+  const tasks = db.prepare('SELECT * FROM tasks ORDER BY created_at ASC').all();
+  const taskById = new Map(tasks.map((t) => [t.id, t]));
+
+  let reassigned = 0;
+  let blockedUpdated = 0;
+
+  for (const t of tasks) {
+    let nextStatus = t.status;
+    let nextIdle = t.idle_reason;
+
+    if (t.depends_on) {
+      const dep = taskById.get(t.depends_on);
+      if (dep && dep.status !== 'done') {
+        nextStatus = 'blocked';
+        nextIdle = `Blocked by ${dep.id}`;
+      } else if (t.status === 'blocked') {
+        nextStatus = 'todo';
+        nextIdle = null;
+      }
+    }
+
+    const suggested = suggestAssigneeByHeuristic(t, resources, taskById);
+    const shouldReassign = !t.assignee || t.assignee === 'Keith Anderson';
+    const nextAssignee = shouldReassign ? suggested : t.assignee;
+
+    if (nextAssignee !== t.assignee || nextStatus !== t.status || nextIdle !== t.idle_reason) {
+      db.prepare('UPDATE tasks SET assignee=?, status=?, idle_reason=?, updated_at=? WHERE id=?')
+        .run(nextAssignee, nextStatus, nextIdle, now(), t.id);
+      if (nextAssignee !== t.assignee) reassigned += 1;
+      if (nextStatus !== t.status || nextIdle !== t.idle_reason) blockedUpdated += 1;
+    }
+  }
+
+  res.json({ ok: true, reassigned, blockedUpdated });
+});
+
+function getTeamAgentSessions() {
+  const rows = db.prepare('SELECT agent_key, name, role, session_key, session_id, status FROM agent_registry ORDER BY name').all();
+  const map = {};
+  for (const r of rows) {
+    map[r.agent_key] = {
+      name: r.name,
+      role: r.role,
+      sessionId: r.session_id,
+      sessionKey: r.session_key,
+      status: r.status
+    };
+  }
+  return map;
+}
+
+function callAgentSession(sessionId, message) {
+  const out = execFileSync('openclaw', ['agent', '--session-id', sessionId, '--message', message, '--json'], {
+    encoding: 'utf8',
+    timeout: 120000
+  });
+  const parsed = JSON.parse(out || '{}');
+  const payloads = parsed?.result?.payloads || [];
+  return payloads.map((p) => p?.text).filter(Boolean).join('\n\n') || 'No response.';
+}
+
+app.get('/teamchat/agents', (_req, res) => {
+  const sessions = getTeamAgentSessions();
+  const agents = [{ key: 'all', name: 'Group Chat (All Agents)' }, ...Object.entries(sessions).map(([key, value]) => ({ key, name: value.name, role: value.role, status: value.status }))];
+  res.json({ agents });
+});
+
+app.post('/teamchat/send', (req, res) => {
+  try {
+    const sessions = getTeamAgentSessions();
+    const agentKey = String(req.body?.agent || '').toLowerCase();
+    const message = String(req.body?.message || '').trim();
+    if (!message) return res.status(400).json({ error: 'Message is required' });
+
+    if (agentKey === 'all') {
+      const replies = [];
+      for (const [key, session] of Object.entries(sessions)) {
+        try {
+          const text = callAgentSession(session.sessionId, message);
+          replies.push({ key, agent: session.name, reply: text });
+          db.prepare('INSERT INTO agent_timeline (id, agent_key, event_type, message, created_at) VALUES (?,?,?,?,?)')
+            .run(id('atl'), key, 'group_chat', `User: ${message} | Agent reply: ${text.slice(0, 4000)}`, now());
+        } catch (err) {
+          replies.push({ key, agent: session.name, reply: `Error: ${err?.message || 'failed'}` });
+        }
+      }
+      return res.json({ ok: true, group: true, replies });
+    }
+
+    if (!sessions[agentKey]) return res.status(400).json({ error: 'Unknown agent' });
+    const session = sessions[agentKey];
+    const text = callAgentSession(session.sessionId, message);
+    db.prepare('INSERT INTO agent_timeline (id, agent_key, event_type, message, created_at) VALUES (?,?,?,?,?)')
+      .run(id('atl'), agentKey, 'chat', `User: ${message} | Agent reply: ${text.slice(0, 4000)}`, now());
+
+    res.json({ ok: true, agent: session.name, reply: text });
+  } catch (err) {
+    res.status(500).json({ error: err?.message || 'Failed to contact agent' });
+  }
+});
+
+app.get('/resources/agents', (_req, res) => {
+  const rows = db.prepare('SELECT * FROM agent_registry ORDER BY name').all();
+  const enriched = rows.map((r) => {
+    const timelineCount = db.prepare('SELECT COUNT(*) as c FROM agent_timeline WHERE agent_key=?').get(r.agent_key)?.c || 0;
+    const lastEvent = db.prepare('SELECT created_at, event_type FROM agent_timeline WHERE agent_key=? ORDER BY created_at DESC LIMIT 1').get(r.agent_key) || null;
+    return { ...r, timeline_count: timelineCount, last_event: lastEvent };
+  });
+  res.json(enriched);
+});
+
+app.get('/resources/agents/:agentKey/timeline', (req, res) => {
+  const events = db.prepare('SELECT * FROM agent_timeline WHERE agent_key=? ORDER BY created_at DESC LIMIT 500').all(req.params.agentKey);
+  res.json(events);
+});
+
+app.post('/resources/agents/register', (req, res) => {
+  const body = req.body || {};
+  const agent_key = String(body.agent_key || '').trim().toLowerCase();
+  if (!agent_key) return res.status(400).json({ error: 'agent_key required' });
+  const existing = db.prepare('SELECT id FROM agent_registry WHERE agent_key=?').get(agent_key);
+  const row = {
+    id: existing?.id || id('areg'),
+    agent_key,
+    name: body.name || agent_key,
+    role: body.role || null,
+    session_key: body.session_key || null,
+    session_id: body.session_id || null,
+    status: body.status || 'live',
+    created_at: existing ? undefined : now(),
+    updated_at: now()
+  };
+
+  if (existing) {
+    db.prepare('UPDATE agent_registry SET name=?, role=?, session_key=?, session_id=?, status=?, updated_at=? WHERE agent_key=?')
+      .run(row.name, row.role, row.session_key, row.session_id, row.status, row.updated_at, agent_key);
+  } else {
+    db.prepare('INSERT INTO agent_registry (id, agent_key, name, role, session_key, session_id, status, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)')
+      .run(row.id, row.agent_key, row.name, row.role, row.session_key, row.session_id, row.status, now(), row.updated_at);
+  }
+
+  db.prepare('INSERT INTO agent_timeline (id, agent_key, event_type, message, created_at) VALUES (?,?,?,?,?)')
+    .run(id('atl'), agent_key, 'register', `Agent registered/updated: ${row.name}`, now());
+
+  res.json({ ok: true });
+});
+
+const port = process.env.PM_PORT || 8787;
+app.listen(port, () => console.log(`Keith PM API running on :${port}`));

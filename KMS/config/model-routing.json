@@ -1,0 +1,65 @@
+{
+  "version": "1.0",
+  "policy": "cost-first",
+  "defaultTier": "tier0",
+  "tiers": {
+    "tier0": {
+      "name": "Free/Local/Lowest",
+      "useFor": [
+        "intent classification",
+        "task tagging",
+        "status normalization",
+        "calendar/reminder formatting",
+        "basic extraction"
+      ],
+      "maxComplexity": 2,
+      "requiresApproval": false
+    },
+    "tier1": {
+      "name": "Cheap",
+      "useFor": [
+        "message drafts",
+        "invoice text drafts",
+        "simple task planning",
+        "meeting summaries",
+        "follow-up generation"
+      ],
+      "maxComplexity": 4,
+      "requiresApproval": false
+    },
+    "tier2": {
+      "name": "Mid-tier",
+      "useFor": [
+        "marketing strategy drafts",
+        "multi-step dependency planning",
+        "product positioning variants",
+        "cross-team synthesis"
+      ],
+      "maxComplexity": 7,
+      "requiresApproval": false
+    },
+    "tier3": {
+      "name": "Best-in-market",
+      "useFor": [
+        "critical client communications",
+        "high-stakes decision support",
+        "complex architecture reasoning",
+        "board-level strategy"
+      ],
+      "maxComplexity": 10,
+      "requiresApproval": true
+    }
+  },
+  "routingRules": [
+    "Always attempt tier0 first for preprocessing",
+    "Escalate only when confidence < 0.8 or complexity threshold exceeded",
+    "Tier3 allowed only for high-stakes or explicit user request",
+    "Log model tier used for every task"
+  ],
+  "budgetGuards": {
+    "dailySoftLimitUsd": 5,
+    "dailyHardLimitUsd": 15,
+    "alertAtPercent": 80,
+    "blockTier3WhenHardLimitHit": true
+  }
+}

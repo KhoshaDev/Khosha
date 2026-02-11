@@ -1,0 +1,64 @@
+{
+  "org": "CEO Agent Workforce v2",
+  "manager": "Keith Anderson",
+  "departments": [
+    {
+      "name": "Operations",
+      "agents": [
+        { "name": "PMO-Agent", "startDate": "2026-02-09", "jobDescription": "Own project timelines, dependencies, and executive updates across teams." },
+        { "name": "QA-Agent", "startDate": "2026-02-09", "jobDescription": "Define test strategy, acceptance criteria, and release quality checks." },
+        { "name": "Automation-Agent", "startDate": "2026-02-09", "jobDescription": "Build automations for repetitive workflows and operational efficiency." }
+      ]
+    },
+    {
+      "name": "Revenue",
+      "agents": [
+        { "name": "Sales-Agent", "startDate": "2026-02-09", "jobDescription": "Drive lead conversion and pipeline follow-ups." },
+        { "name": "Invoice-Agent", "startDate": "2026-02-09", "jobDescription": "Generate invoices, dispatch billing notes, and track payment dates." },
+        { "name": "Collections-Agent", "startDate": "2026-02-09", "jobDescription": "Manage payment reminders, overdue escalations, and receivables risk." }
+      ]
+    },
+    {
+      "name": "Marketing",
+      "agents": [
+        { "name": "Performance-Marketing-Agent", "startDate": "2026-02-09", "jobDescription": "Run paid growth campaigns with CAC/ROAS tracking." },
+        { "name": "Content-Agent", "startDate": "2026-02-09", "jobDescription": "Plan and create content calendars, copy, and campaign assets." },
+        { "name": "SEO-Agent", "startDate": "2026-02-09", "jobDescription": "Own keyword strategy, technical SEO, and organic traffic growth." }
+      ]
+    },
+    {
+      "name": "Product (Retailer OS)",
+      "agents": [
+        { "name": "Product-Manager-Agent", "startDate": "2026-02-09", "jobDescription": "Prioritize product backlog and define release scope." },
+        { "name": "Customer-Research-Agent", "startDate": "2026-02-09", "jobDescription": "Synthesize user feedback and identify feature opportunities." },
+        { "name": "Growth-Experiment-Agent", "startDate": "2026-02-09", "jobDescription": "Design and run growth experiments across funnel stages." }
+      ]
+    },
+    {
+      "name": "Engineering",
+      "agents": [
+        { "name": "Tech-Lead-Agent", "startDate": "2026-02-09", "jobDescription": "Own architecture, coding standards, and technical decision quality." },
+        { "name": "Frontend-Agent", "startDate": "2026-02-09", "jobDescription": "Build responsive UI, interaction systems, and frontend performance." },
+        { "name": "Backend-Agent", "startDate": "2026-02-09", "jobDescription": "Develop APIs, business logic, and secure data flows." },
+        { "name": "DevOps-Agent", "startDate": "2026-02-09", "jobDescription": "Manage CI/CD, cloud deployments, monitoring, and uptime." }
+      ]
+    },
+    {
+      "name": "Full Stack Development",
+      "agents": [
+        { "name": "Fullstack-Architect-Agent", "startDate": "2026-02-09", "jobDescription": "Design end-to-end app architecture and integration patterns." },
+        { "name": "Fullstack-Builder-Agent", "startDate": "2026-02-09", "jobDescription": "Implement full-stack features from backlog to production." },
+        { "name": "API-Integration-Agent", "startDate": "2026-02-09", "jobDescription": "Integrate third-party APIs and internal service contracts." },
+        { "name": "Database-Design-Agent", "startDate": "2026-02-09", "jobDescription": "Define schemas, indexes, migration plans, and data integrity." },
+        { "name": "Testing-Automation-Agent", "startDate": "2026-02-09", "jobDescription": "Create integration/e2e test suites and test pipelines." },
+        { "name": "Release-Manager-Agent", "startDate": "2026-02-09", "jobDescription": "Coordinate release trains, rollback strategy, and release notes." }
+      ]
+    }
+  ],
+  "spawnRules": [
+    "If queue > 20 tasks, split overloaded specialist into two focused agents",
+    "If blocked tasks > 5 in a lane, auto-assign PMO-Agent for unblock plan",
+    "If SLA breach risk > 20%, escalate to Keith Anderson",
+    "Use tier3 models only for high-stakes architecture or critical client communication"
+  ]
+}
