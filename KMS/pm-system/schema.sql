@@ -4,10 +4,6 @@ CREATE TABLE IF NOT EXISTS projects (
   name TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'planning',
   owner TEXT,
-  description TEXT,
-  scope_summary TEXT,
-  dependencies TEXT,
-  ceo_owner TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -20,10 +16,6 @@ CREATE TABLE IF NOT EXISTS tasks (
   approved INTEGER NOT NULL DEFAULT 0,
   github_issue_number INTEGER,
   github_issue_url TEXT,
-  start_date TEXT,
-  due_date TEXT,
-  depends_on TEXT,
-  idle_reason TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   FOREIGN KEY(project_id) REFERENCES projects(id)
@@ -77,23 +69,17 @@ CREATE TABLE IF NOT EXISTS integrations_github (
   token_env_var TEXT NOT NULL,
   enabled INTEGER NOT NULL DEFAULT 1
 );
-
-CREATE TABLE IF NOT EXISTS agent_registry (
+CREATE TABLE IF NOT EXISTS agent_runs (
   id TEXT PRIMARY KEY,
-  agent_key TEXT NOT NULL UNIQUE,
-  name TEXT NOT NULL,
-  role TEXT,
-  session_key TEXT,
-  session_id TEXT,
-  status TEXT NOT NULL DEFAULT 'live',
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS agent_timeline (
-  id TEXT PRIMARY KEY,
-  agent_key TEXT NOT NULL,
-  event_type TEXT NOT NULL,
-  message TEXT NOT NULL,
+  goal TEXT NOT NULL,
+  project_id TEXT,
+  status TEXT NOT NULL,
+  started_at TEXT NOT NULL,
+  completed_at TEXT,
+  agent_count INTEGER DEFAULT 0,
+  total_cost_usd REAL DEFAULT 0,
+  total_input_tokens INTEGER DEFAULT 0,
+  total_output_tokens INTEGER DEFAULT 0,
+  report TEXT,
   created_at TEXT NOT NULL
 );

@@ -1,4 +1,4 @@
-const API='/api';
+const API='/pm-api';
 async function projects(){const r=await fetch(`${API}/projects`);return r.ok?await r.json():[]}
 async function resources(){const r=await fetch(`${API}/resources`);return r.ok?await r.json():[]}
 async function taskList(projectId){const r=await fetch(`${API}/projects/${projectId}/tasks`);return r.ok?await r.json():[]}
@@ -48,8 +48,7 @@ document.getElementById('add-subtask').onclick=async()=>{
 document.getElementById('gh-config').onclick=async()=>{
   const owner=document.getElementById('gh-owner').value.trim();
   const repo=document.getElementById('gh-repo').value.trim();
-  const tokenInput=document.getElementById('gh-token-env');
-  const token_env_var=(tokenInput?tokenInput.value.trim():'')||'GITHUB_TOKEN';
+  const token_env_var=document.getElementById('gh-token-var').value.trim()||'GITHUB_TOKEN';
   if(!owner||!repo) return;
   const r=await fetch(`${API}/integrations/github/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({owner,repo,token_env_var})});
   document.getElementById('gh-status').textContent = r.ok ? 'GitHub config saved.' : 'GitHub config failed.';
@@ -66,16 +65,12 @@ document.getElementById('gh-import').onclick=async()=>{
   render();
 }
 
-const suggestBtn = document.getElementById('suggest-assignee');
-if (suggestBtn) {
-  suggestBtn.onclick=async()=>{
-    const taskId=document.getElementById('suggest-task-id').value.trim(); if(!taskId) return;
-    const r=await fetch(`${API}/tasks/${taskId}/suggest-assignee`,{method:'POST'}); const j=await r.json();
-    const role = j.suggestedRole || j.reason || 'Suggestion';
-    const assignee = j.suggestedAssignee || j.suggested_assignee || 'No match';
-    const out = document.getElementById('suggest-out');
-    if (out) out.textContent = r.ok ? `${role}: ${assignee}` : (j.error||'Suggestion failed');
-  }
+document.getElementById('suggest-assignee').onclick=async()=>{
+  const taskId=document.getElementById('suggest-task-id').value.trim(); if(!taskId) return;
+  const r=await fetch(`${API}/tasks/${taskId}/suggest-assignee`,{method:'POST'}); const j=await r.json();
+  const role = j.suggestedRole || j.reason || 'Suggestion';
+  const assignee = j.suggestedAssignee || j.suggested_assignee || 'No match';
+  document.getElementById('suggest-out').textContent = r.ok ? `${role}: ${assignee}` : (j.error||'Suggestion failed');
 }
 
 loadAssignees();

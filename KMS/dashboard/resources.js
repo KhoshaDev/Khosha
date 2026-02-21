@@ -1,4 +1,4 @@
-const API='/api';
+const API='/pm-api';
 async function render(){
   const r=await fetch(`${API}/resources`);const items=r.ok?await r.json():[];
   document.getElementById('res-list').innerHTML=(items.length?items:[{name:'No resources',role:'-',type:'-'}]).map(x=>`<div class="dept"><h4>${x.name}</h4><p class="meta">${x.type} • ${x.role}</p><p class="meta">Start: ${x.start_date||'-'}</p><p class="meta">${x.job_description||''}</p></div>`).join('');
