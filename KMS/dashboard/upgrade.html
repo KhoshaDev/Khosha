@@ -1,5 +1,68 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>KMS Redesign Cockpit</title><link rel="stylesheet" href="./styles.css"/></head><body><div class="app-shell"><aside class="sidebar"><div class="brand"><span class="logo">☀️</span><div><h1>KMS (Khosha Management Systems)</h1><p>Redesign Program Cockpit</p></div></div><nav id="global-nav" class="top-nav"></nav></aside><main class="content"><header class="page-header"><h2>🎯 KMS Redesign Live Cockpit</h2><p>Real-time view of who is doing what, current stage, and next outputs.</p></header>
-<section class="grid-2"><div class="dept"><h3>Program Snapshot</h3><div id="snapshot" class="meta">Loading...</div></div><div class="dept"><h3>Current Execution Wave</h3><div class="chips"><span class="chip">Wave 1: Foundation + Visibility</span></div><p class="meta">Brand language + execution plan + live cockpit are being published first.</p></div></section>
-<section><h3>Assignee Load & ETA</h3><div id="assignee-load" class="workforce"></div></section>
-<section><h3>Tasks Pipeline</h3><div id="task-pipeline" class="workforce"></div></section>
-<section class="grid-2"><div class="dept"><h3>Program Documents</h3><ul class="list-compact"><li><a class="link" target="_blank" href="./reports/brand-language.html">KMS Brand Language v2 (HTML)</a></li><li><a class="link" target="_blank" href="./reports/execution-plan.html">KMS Redesign Execution Plan (HTML)</a></li><li><a class="link" target="_blank" href="../docs/master-plan.md">Master Plan</a></li></ul></div><div class="dept"><h3>What you'll see next</h3><ul class="list-compact"><li>Projects v2 redesign cards</li><li>Task pipeline UX upgrade</li><li>Dependency board visualization</li></ul></div></section></main></div><script src="./shell.js"></script><script src="./upgrade.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Redesign Cockpit — KMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><!-- replaced by shell.js --></div>
+    <nav id="global-nav" class="top-nav"></nav>
+  </aside>
+  <main class="content">
+    <header class="page-header">
+      <h2>Redesign Cockpit</h2>
+      <p>Real-time view of who is doing what, current stage, and next outputs</p>
+    </header>
+
+    <section class="grid-2">
+      <div class="dept">
+        <h3>Program Snapshot</h3>
+        <div id="snapshot" class="meta">Loading...</div>
+      </div>
+      <div class="dept">
+        <h3>Current Execution Wave</h3>
+        <div class="chips"><span class="chip">Wave 1: Foundation + Visibility</span></div>
+        <p class="meta">Brand language + execution plan + live cockpit are being published first.</p>
+      </div>
+    </section>
+
+    <section>
+      <h3>Assignee Load & ETA</h3>
+      <div id="assignee-load" class="workforce"></div>
+    </section>
+
+    <section>
+      <h3>Tasks Pipeline</h3>
+      <div id="task-pipeline" class="workforce"></div>
+    </section>
+
+    <section class="grid-2">
+      <div class="dept">
+        <h3>Program Documents</h3>
+        <ul class="list-compact">
+          <li><a class="link" target="_blank" href="./reports/brand-language.html">KMS Brand Language v2</a></li>
+          <li><a class="link" target="_blank" href="./reports/execution-plan.html">KMS Redesign Execution Plan</a></li>
+          <li><a class="link" target="_blank" href="../docs/master-plan.md">Master Plan</a></li>
+        </ul>
+      </div>
+      <div class="dept">
+        <h3>What's coming next</h3>
+        <ul class="list-compact">
+          <li>Projects v2 redesign cards</li>
+          <li>Task pipeline UX upgrade</li>
+          <li>Dependency board visualization</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="./shell.js"></script>
+<script src="./upgrade.js"></script>
+</body>
+</html>

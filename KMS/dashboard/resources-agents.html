@@ -1,1 +1,40 @@
-<!doctype html><html class="dark" lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Resources / Agents</title><script src="https://cdn.tailwindcss.com?plugins=forms"></script><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/><script>tailwind.config={darkMode:'class',theme:{extend:{colors:{primary:'#135bec',bg:'#101622',surface:'#1c222d',line:'#2d3544'},fontFamily:{display:['Inter']}}}}</script></head><body class="bg-bg text-slate-100 font-display"><div class="max-w-[900px] mx-auto min-h-screen p-4"><header class="mb-4"><h1 class="text-2xl font-bold">Resources / Agents</h1><p class="text-sm text-slate-400">Session keys, session IDs, and full timeline per agent.</p><a class="text-primary text-sm" href="./agents.html">← Back to Agents</a></header><section class="grid md:grid-cols-2 gap-3"><div class="rounded-xl border border-line bg-surface p-3"><h2 class="font-semibold mb-2">Agents</h2><div id="list" class="space-y-2"></div></div><div class="rounded-xl border border-line bg-surface p-3"><h2 id="tTitle" class="font-semibold mb-2">Timeline</h2><div id="timeline" class="space-y-2 max-h-[70vh] overflow-auto"></div></div></section></div><script src="./resources-agents.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Resources / Agents — KMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><!-- replaced by shell.js --></div>
+    <nav id="global-nav" class="top-nav"></nav>
+  </aside>
+  <main class="content">
+    <header class="page-header">
+      <h2>Resources / Agents</h2>
+      <p>Session keys, session IDs and full timeline per agent — <a class="link" href="./agents.html">← back to agents</a></p>
+    </header>
+
+    <section>
+      <div class="grid-2">
+        <div class="dept">
+          <h3 style="margin-bottom:8px">Agents</h3>
+          <div id="list"></div>
+        </div>
+        <div class="dept">
+          <h3 id="tTitle" style="margin-bottom:8px">Timeline</h3>
+          <div id="timeline" class="scroll-y"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="./shell.js"></script>
+<script src="./resources-agents.js"></script>
+</body>
+</html>

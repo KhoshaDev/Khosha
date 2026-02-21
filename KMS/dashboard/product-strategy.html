@@ -1,1 +1,46 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>RetailerOS Improvement Plan</title><link rel="stylesheet" href="./styles.css"/></head><body><div class="app-shell"><aside class="sidebar"><div class="brand"><span class="logo">☀️</span><div><h1>KMS (Khosha Management Systems)</h1><p>Khosha Management Systems</p></div></div><nav id="global-nav" class="top-nav"></nav></aside><main class="content"><header class="page-header"><h2>🛍️ RetailerOS Improvement Plan</h2><p>Path from home project to market-ready SaaS.</p></header><section class="grid-2"><div class="dept"><h3>P0 Priorities</h3><ul class="list-compact"><li>Remove hardcoded DB/API tokens and rotate keys.</li><li>Introduce secure backend APIs (no frontend DB secrets).</li><li>Add auth + role-based access control.</li><li>Create onboarding flow + sample data.</li><li>Add audit logs for sensitive actions.</li></ul></div><div class="dept"><h3>P1 / P2 Scale</h3><ul class="list-compact"><li>WhatsApp lead workflows + automation rules.</li><li>KPI dashboard (revenue, conversion, retention, SLA).</li><li>Observability, billing, multi-tenant hardening, caching.</li></ul></div></section></main></div><script src="./shell.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>RetailerOS Plan — KMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><!-- replaced by shell.js --></div>
+    <nav id="global-nav" class="top-nav"></nav>
+  </aside>
+  <main class="content">
+    <header class="page-header">
+      <h2>RetailerOS Improvement Plan</h2>
+      <p>Path from home project to market-ready SaaS</p>
+    </header>
+    <section class="grid-2">
+      <div class="dept">
+        <h3>P0 Priorities</h3>
+        <ul class="list-compact">
+          <li>Remove hardcoded DB/API tokens and rotate keys.</li>
+          <li>Introduce secure backend APIs (no frontend DB secrets).</li>
+          <li>Add auth + role-based access control.</li>
+          <li>Create onboarding flow + sample data.</li>
+          <li>Add audit logs for sensitive actions.</li>
+        </ul>
+      </div>
+      <div class="dept">
+        <h3>P1 / P2 Scale</h3>
+        <ul class="list-compact">
+          <li>WhatsApp lead workflows + automation rules.</li>
+          <li>KPI dashboard (revenue, conversion, retention, SLA).</li>
+          <li>Observability, billing, multi-tenant hardening, caching.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="./shell.js"></script>
+</body>
+</html>

@@ -1,1 +1,30 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Kanban</title><link rel="stylesheet" href="./styles.css"/></head><body><div class="app-shell"><aside class="sidebar"><div class="brand"><span class="logo">☀️</span><div><h1>KMS (Khosha Management Systems)</h1><p>Khosha Management Systems</p></div></div><nav id="global-nav" class="top-nav"></nav></aside><main class="content"><header class="page-header"><h2>🧩 Kanban Module</h2><p>Task execution board with dense yet scrollable lanes.</p></header><section><h3>Project Management Kanban</h3><div class="board" id="board"></div></section></main></div><script src="./shell.js"></script><script src="./kanban.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Kanban — KMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><!-- replaced by shell.js --></div>
+    <nav id="global-nav" class="top-nav"></nav>
+  </aside>
+  <main class="content">
+    <header class="page-header">
+      <h2>Kanban</h2>
+      <p>Task execution board with scrollable lanes</p>
+    </header>
+    <section>
+      <div class="board" id="board"></div>
+    </section>
+  </main>
+</div>
+<script src="./shell.js"></script>
+<script src="./kanban.js"></script>
+</body>
+</html>
