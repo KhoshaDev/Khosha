@@ -1,0 +1,62 @@
+[
+  {
+    "runId": "run-1771685140308-3",
+    "goal": "test task. just mark as complete.",
+    "status": "complete",
+    "startedAt": "2026-02-21T14:45:40.308Z",
+    "completedAt": "2026-02-21T14:45:41.855Z",
+    "agentCount": 0,
+    "usage": {
+      "total_input_tokens": 1183,
+      "total_output_tokens": 102,
+      "total_cost": 0.0013544,
+      "by_model": {
+        "claude-haiku-4-5-20251001": {
+          "input_tokens": 1183,
+          "output_tokens": 102,
+          "cost": 0.0013544
+        }
+      }
+    }
+  },
+  {
+    "runId": "run-1771681810696-2",
+    "goal": "I want to create a proposal and send it to rahul sharma.Based on all the contexts we have about him.Create it and ask me for approval before we send it to him",
+    "status": "complete",
+    "startedAt": "2026-02-21T13:50:10.697Z",
+    "completedAt": "2026-02-21T13:51:18.739Z",
+    "agentCount": 2,
+    "usage": {
+      "total_input_tokens": 28491,
+      "total_output_tokens": 7859,
+      "total_cost": 0.0542288,
+      "by_model": {
+        "claude-haiku-4-5-20251001": {
+          "input_tokens": 28491,
+          "output_tokens": 7859,
+          "cost": 0.0542288
+        }
+      }
+    }
+  },
+  {
+    "runId": "run-1771666125039-1",
+    "goal": "make a proposal for Rahul Sharma based on the qualified data from the leads. and check if we have sent proposal to Rahul before? if not then do it else show me the proposal.",
+    "status": "complete",
+    "startedAt": "2026-02-21T09:28:45.039Z",
+    "completedAt": "2026-02-21T09:29:29.663Z",
+    "agentCount": 2,
+    "usage": {
+      "total_input_tokens": 13955,
+      "total_output_tokens": 4779,
+      "total_cost": 0.03028,
+      "by_model": {
+        "claude-haiku-4-5-20251001": {
+          "input_tokens": 13955,
+          "output_tokens": 4779,
+          "cost": 0.03028
+        }
+      }
+    }
+  }
+]
